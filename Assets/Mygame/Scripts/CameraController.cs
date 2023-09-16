@@ -13,8 +13,8 @@ public class CameraController : MonoBehaviour
     float _defXSpeed;
     float _defYSpeed;
     float _nowCameraOffset = 0f;
-    void Awake()
-    {
+    void Awake() 
+    { 
         _myCamera = GetComponent<CinemachineFreeLook>();
         _myCameraOffset = GetComponent<CinemachineCameraOffset>();
         _defXSpeed = _myCamera.m_XAxis.m_MaxSpeed;
@@ -31,7 +31,7 @@ public class CameraController : MonoBehaviour
         var scroll  = Input.GetAxis("Mouse ScrollWheel");
         if (Input.GetMouseButton(1))
         {
-            Debug.Log("‰Ÿ‚³‚ê‚Ä‚é");
+            print("‚¨‚³‚ê‚½");
             _myCamera.m_XAxis.m_MaxSpeed = _defXSpeed;
             _myCamera.m_YAxis.m_MaxSpeed = _defYSpeed;
         }
