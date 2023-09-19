@@ -1,3 +1,4 @@
+using Cinemachine;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -8,6 +9,7 @@ public class CameraManager : MonoBehaviour
     public static CameraManager Instance => instance;
     [SerializeField] GameObject FreeLookCamera;
     [SerializeField] GameObject TPSCamera;
+    [SerializeField] GameObject Sholder;
     public static bool _changeFlag = false;
 
     private void Awake()
@@ -45,7 +47,11 @@ public class CameraManager : MonoBehaviour
                 TPSCamera.SetActive(false);
                 _changeFlag = false;
             }
-            
+        }
+        if (_changeFlag)
+        {
+            TPSCamera.GetComponent<CinemachineVirtualCamera>().GetCinemachineComponent<CinemachineOrbitalTransposer>()
+                .m_FollowOffset.y += Input.GetAxis("Mouse Y");
         }
     }
 }

@@ -72,7 +72,8 @@ public class MoveController : MonoBehaviour
         else
             _animMotionDrag = 1f;
         ArrowFireAction();
-        JumpAction();
+        if(!CameraManager._changeFlag)
+            JumpAction();
     }
     void ArrowFireAction()
     {

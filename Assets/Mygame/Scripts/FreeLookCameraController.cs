@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Xml.Serialization;
 using UnityEngine;
 using System.Linq;
-public class CameraController : MonoBehaviour
+public class FreeLookCameraController : MonoBehaviour
 {
     [SerializeField] float _offsetLimit = 3.0f;
     [SerializeField] float _offsetSpeed = 1.0f;
@@ -31,7 +31,6 @@ public class CameraController : MonoBehaviour
         var scroll  = Input.GetAxis("Mouse ScrollWheel");
         if (Input.GetMouseButton(1))
         {
-            print("‚¨‚³‚ê‚½");
             _myCamera.m_XAxis.m_MaxSpeed = _defXSpeed;
             _myCamera.m_YAxis.m_MaxSpeed = _defYSpeed;
         }
