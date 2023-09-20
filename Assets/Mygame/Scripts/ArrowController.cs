@@ -4,6 +4,7 @@ using UnityEngine;
 
 public class ArrowController : MonoBehaviour
 {
+    [SerializeField] GameObject _destroyEffect;
     [SerializeField] float _destroyTime = 3f;
     [SerializeField] float _moveSpeed = 3f;
     Rigidbody _rb;
@@ -15,9 +16,12 @@ public class ArrowController : MonoBehaviour
         _rb.velocity = transform.forward * _moveSpeed;
     }
 
-    // Update is called once per frame
-    void Update()
+    private void OnCollisionEnter(Collision collision)
     {
-        
+        if(collision.collider.tag == "Field")
+        {
+            Instantiate(_destroyEffect , transform.position , transform.rotation ,null);
+            Destroy(gameObject);
+        }
     }
 }

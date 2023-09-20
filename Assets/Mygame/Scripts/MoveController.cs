@@ -16,6 +16,7 @@ public class MoveController : MonoBehaviour
     [SerializeField] float _backwardSpeed = 2.0f;
     [SerializeField] float _rotateSpeed = 2.0f;
     [SerializeField] float _jumpPower = 3.0f;
+
     public AnimatorStateInfo CurrentBaseState;
     public AnimatorStateInfo ArrowState;
     float _animMotionDrag = 1f;
@@ -72,7 +73,7 @@ public class MoveController : MonoBehaviour
         else
             _animMotionDrag = 1f;
         ArrowFireAction();
-        if(!CameraManager._changeFlag)
+        if(!CameraManager._nowTPSCameraFlag)
             JumpAction();
     }
     void ArrowFireAction()
@@ -129,22 +130,22 @@ public class MoveController : MonoBehaviour
     }
     void FixedUpdate()
     {
-        float moveRate;
-        if (_inputVertical >= 0)
-            moveRate = _forwardSpeed;
-        else
-            moveRate = _backwardSpeed;
-        if (!CameraManager._changeFlag)
+        float moveRate = ( _inputVertical >= 0 ) ?_forwardSpeed : _backwardSpeed;
+        if (!CameraManager._nowTPSCameraFlag)
         {
+            //FreeLook時の移動制御
             var moveVelo = (transform.forward * _inputVertical).normalized * moveRate * _animMotionDrag;
             _nowVelocity = new Vector3(moveVelo.x, _rb.velocity.y, moveVelo.z);
             transform.Rotate(0, _inputHorizonal * _rotateSpeed, 0);
         }
         else
         {
+            //TPSCamera時の移動制御
             var CForward = Camera.main.transform.forward;
             var CRight = Camera.main.transform.right;
-            var _moveX = new Vector3(CForward.x, 0f, CForward.z) * _inputVertical;
+            transform.forward = new Vector3(CForward.x, 0f, CForward.z ).normalized;
+            
+            var _moveX = new Vector3(CForward.x , 0f, CForward.z) * _inputVertical;
             var _moveZ = new Vector3(CRight.x, 0f, CRight.z) * _inputHorizonal;
             _nowVelocity = (_moveX + _moveZ).normalized * moveRate * _animMotionDrag;
         }

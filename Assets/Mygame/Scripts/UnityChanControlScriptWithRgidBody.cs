@@ -102,7 +102,7 @@ namespace UnityChan
                 _motionDrag = 0.5f;
             else
                 _motionDrag = 1f;
-            if (!CameraManager._changeFlag)
+            if (!CameraManager._nowTPSCameraFlag)
             {
                 JumpAnimation();
             }
@@ -238,7 +238,7 @@ namespace UnityChan
             {
                 moveRate = _backwardSpeed;
             }
-            if (!CameraManager._changeFlag)
+            if (!CameraManager._nowTPSCameraFlag)
             {
 
                 var moveVelo = (transform.forward * _inputVertical).normalized * moveRate * _motionDrag;

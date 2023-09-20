@@ -10,7 +10,8 @@ public class CameraManager : MonoBehaviour
     [SerializeField] GameObject FreeLookCamera;
     [SerializeField] GameObject TPSCamera;
     [SerializeField] GameObject Sholder;
-    public static bool _changeFlag = false;
+    [SerializeField] GameObject _targetImage ;
+    public static bool _nowTPSCameraFlag = false;
 
     private void Awake()
     {
@@ -32,26 +33,21 @@ public class CameraManager : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if(Input.GetKeyDown(KeyCode.C))
+        if(Input.GetMouseButtonDown(1))
         {
-            if(!_changeFlag)
-            {
-                FreeLookCamera.SetActive(false);
-                TPSCamera.SetActive(true);
-                _changeFlag = true;
-
-            }
-            else
-            {
-                FreeLookCamera.SetActive(true);
-                TPSCamera.SetActive(false);
-                _changeFlag = false;
-            }
+            FreeLookCamera.SetActive(false);
+            TPSCamera.SetActive(true);
+            _nowTPSCameraFlag = true;
+            _targetImage.SetActive(true);
+            Cursor.visible = false;
         }
-        if (_changeFlag)
+        if(Input.GetMouseButtonUp(1))
         {
-            TPSCamera.GetComponent<CinemachineVirtualCamera>().GetCinemachineComponent<CinemachineOrbitalTransposer>()
-                .m_FollowOffset.y += Input.GetAxis("Mouse Y");
+            FreeLookCamera.SetActive(true);
+            TPSCamera.SetActive(false);
+            _nowTPSCameraFlag = false;
+            _targetImage.SetActive(false);
+            Cursor.visible = true;
         }
     }
 }

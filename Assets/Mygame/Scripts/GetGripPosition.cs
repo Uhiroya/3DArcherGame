@@ -36,4 +36,6 @@ public class GetGripPosition : MonoBehaviour
         var getPos = _gripPosition.transform.position;
         transform.position = new Vector3(getPos.x, transform.position.y, getPos.z);
     }
+
+    
 }

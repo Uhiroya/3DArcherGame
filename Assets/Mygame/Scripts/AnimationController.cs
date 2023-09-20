@@ -18,6 +18,7 @@ public class AnimationController : MonoBehaviour
     [SerializeField] GameObject _arrowObject;
     [SerializeField] GameObject _arrowParticle;
     [SerializeField] GameObject _arrowStart;
+    [SerializeField] float _arrowOffset = 0f;
     private Animator _anim;
     private AnimatorStateInfo _currentBaseState;
     private AnimatorStateInfo _arrowState;
@@ -34,11 +35,6 @@ public class AnimationController : MonoBehaviour
     {
         _currentBaseState = _anim.GetCurrentAnimatorStateInfo(_anim.GetLayerIndex("MoveControll"));
         _arrowState = _anim.GetCurrentAnimatorStateInfo(_arrowMortionLayerIndex);
-    }
-    IEnumerator ArrowFire()
-    {
-        Instantiate(_arrowParticle, _arrowStart.transform.position, _arrowStart.transform.rotation, null);
-        yield return null;
     }
     bool flag = false;
     float timer = 0f;
@@ -63,6 +59,7 @@ public class AnimationController : MonoBehaviour
         {
             timer = 0f;
         }
+        
     }
     public void ArrowChargeStart()
     {
@@ -81,7 +78,8 @@ public class AnimationController : MonoBehaviour
         if (_arrowCharge > 0.5f)
         {
             _anim.SetTrigger("ArrowRelease");
-            StartCoroutine(ArrowFire());
+            Instantiate(_arrowParticle, _arrowStart.transform.position, _arrowStart.transform.rotation * 
+                Quaternion.Euler((!CameraManager._nowTPSCameraFlag) ? 0f : Camera.main.transform.rotation.eulerAngles.x + _arrowOffset, 0f,0f), null);
         }
         _arrowCharge = 0f;
         _arrowObject.SetActive(false);
