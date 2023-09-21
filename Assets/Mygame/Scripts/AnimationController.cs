@@ -47,13 +47,13 @@ public class AnimationController : MonoBehaviour
             timer = Mathf.Clamp(timer, 0f, time);
             _anim.bodyRotation = _anim.bodyRotation * Quaternion.Euler(0, 90 * (timer / time), 0);
             _anim.SetIKPositionWeight(AvatarIKGoal.LeftFoot, 0.2f);
-            _anim.SetIKPositionWeight(AvatarIKGoal.RightFoot, 0.2f);
+            _anim.SetIKPositionWeight(AvatarIKGoal.RightFoot, 0.1f);
             _anim.SetIKRotationWeight(AvatarIKGoal.LeftFoot, 0.4f);
-            _anim.SetIKRotationWeight(AvatarIKGoal.RightFoot, 0.4f);
+            _anim.SetIKRotationWeight(AvatarIKGoal.RightFoot, 0.1f);
             //_anim.SetIKRotation(AvatarIKGoal.LeftFoot , Quaternion.Euler (0 , - 30f ,0) );
             //_anim.SetIKRotation(AvatarIKGoal.RightFoot, Quaternion.Euler(0, - 30f, 0));
-            _anim.SetIKHintPositionWeight(AvatarIKHint.LeftKnee, 1f);
-            _anim.SetIKHintPositionWeight(AvatarIKHint.RightKnee, 1f);
+            _anim.SetIKHintPositionWeight(AvatarIKHint.LeftKnee, 0.6f);
+            _anim.SetIKHintPositionWeight(AvatarIKHint.RightKnee, 0.6f);
         }
         else
         {
@@ -70,7 +70,7 @@ public class AnimationController : MonoBehaviour
         _arrowObject.SetActive(true);
         _bowStringConstraint.constraintActive = true;
         _anim.SetBool("ArrowCharge", true);
-        _anim.SetLayerWeight(_arrowMortionLayerIndex, 1.0f);
+        _anim.SetLayerWeight(_arrowMortionLayerIndex, _arrowCharge + 0.5f);
         _arrowCharge += Time.deltaTime;
     }
     public void ArrowRelease()

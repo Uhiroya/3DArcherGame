@@ -40,6 +40,7 @@ public class CameraManager : MonoBehaviour
             _nowTPSCameraFlag = true;
             _targetImage.SetActive(true);
             Cursor.visible = false;
+            Cursor.lockState = CursorLockMode.Locked;
         }
         if(Input.GetMouseButtonUp(1))
         {
@@ -48,6 +49,7 @@ public class CameraManager : MonoBehaviour
             _nowTPSCameraFlag = false;
             _targetImage.SetActive(false);
             Cursor.visible = true;
+            Cursor.lockState = CursorLockMode.None;
         }
     }
 }

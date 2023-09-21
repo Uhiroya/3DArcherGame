@@ -14,6 +14,7 @@ public class MoveController : MonoBehaviour
 {
     [SerializeField] float _forwardSpeed = 7.0f;
     [SerializeField] float _backwardSpeed = 2.0f;
+    [SerializeField] float _sidewardSpeed = 4.0f;
     [SerializeField] float _rotateSpeed = 2.0f;
     [SerializeField] float _jumpPower = 3.0f;
 
@@ -56,15 +57,31 @@ public class MoveController : MonoBehaviour
         _inputHorizonal = Input.GetAxis("Horizontal");              
         _inputVertical = Input.GetAxis("Vertical");
         _anim.SetFloat("velocity_y", _rb.velocity.y);
-        if (_animState == AnimStatePattern.ArrowFire)
+        if (!CameraManager._nowTPSCameraFlag) //フリーカメラ時のアニメーション制御
         {
-            _anim.SetFloat("Speed", Mathf.Clamp(_inputVertical, -1f, 0.2f));
-            _anim.SetFloat("Direction", 0f);
+            if (_animState == AnimStatePattern.ArrowFire)
+            {
+                _anim.SetFloat("Speed", Mathf.Clamp(_inputVertical, -1f, 0.2f));
+                _anim.SetFloat("Direction", 0f);
+            }
+            else
+            {
+                _anim.SetFloat("Speed", _inputVertical);
+                _anim.SetFloat("Direction", _inputHorizonal);
+            }
         }
-        else
+        else //TPSカメラ時のアニメーション制御
         {
-            _anim.SetFloat("Speed", _inputVertical);
-            _anim.SetFloat("Direction", _inputHorizonal);
+            if (_animState == AnimStatePattern.ArrowFire)
+            {
+                _anim.SetFloat("Speed", Mathf.Clamp(_inputVertical != 0 ? _inputVertical : _inputHorizonal, -1f, 0.2f));
+                _anim.SetFloat("Direction", 0f);
+            }
+            else
+            {
+                _anim.SetFloat("Speed", _inputVertical != 0  ? _inputVertical : Mathf.Abs(_inputHorizonal * (_sidewardSpeed / _forwardSpeed)));
+                _anim.SetFloat("Direction", _inputHorizonal);
+            }
         }
         if (_jumpState == JumpStatePattern.JumpWait)
             _animMotionDrag = 0.7f;
@@ -73,7 +90,7 @@ public class MoveController : MonoBehaviour
         else
             _animMotionDrag = 1f;
         ArrowFireAction();
-        if(!CameraManager._nowTPSCameraFlag)
+        if(!CameraManager._nowTPSCameraFlag || _jumpState != JumpStatePattern.Landing)
             JumpAction();
     }
     void ArrowFireAction()
@@ -96,7 +113,7 @@ public class MoveController : MonoBehaviour
 
     void JumpAction()
     {
-        if (Input.GetButton("Jump") && _jumpState == JumpStatePattern.Landing)
+        if (Input.GetButtonDown("Jump") && _jumpState == JumpStatePattern.Landing)
         {
             _jumpState = JumpStatePattern.JumpWait;
             _ac.JumpWait();
@@ -120,7 +137,7 @@ public class MoveController : MonoBehaviour
             {
                 _ac.JumpEnd();
                 _nextJumpTimer += Time.deltaTime;
-                if (_nextJumpTimer > 0.2f)
+                if (_nextJumpTimer > 0.5f)
                 {
                     _jumpState = JumpStatePattern.Landing;
                     _nextJumpTimer = 0f;
@@ -141,13 +158,14 @@ public class MoveController : MonoBehaviour
         else
         {
             //TPSCamera時の移動制御
+            moveRate = (_inputVertical != 0) ? moveRate : _sidewardSpeed;
             var CForward = Camera.main.transform.forward;
             var CRight = Camera.main.transform.right;
             transform.forward = new Vector3(CForward.x, 0f, CForward.z ).normalized;
-            
-            var _moveX = new Vector3(CForward.x , 0f, CForward.z) * _inputVertical;
-            var _moveZ = new Vector3(CRight.x, 0f, CRight.z) * _inputHorizonal;
-            _nowVelocity = (_moveX + _moveZ).normalized * moveRate * _animMotionDrag;
+            var moveX = new Vector3(CForward.x , 0f, CForward.z) * _inputVertical;
+            var moveZ = new Vector3(CRight.x, 0f, CRight.z) * _inputHorizonal;
+            var dir = (moveX + moveZ).normalized * moveRate * _animMotionDrag;
+            _nowVelocity = new Vector3(dir.x ,_rb.velocity.y , dir.z);
         }
         _rb.velocity = _nowVelocity;
     }

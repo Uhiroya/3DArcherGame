@@ -5,6 +5,7 @@ using UnityEngine;
 public class ArrowController : MonoBehaviour
 {
     [SerializeField] GameObject _destroyEffect;
+    [SerializeField] float _gravity = 0.2f;
     [SerializeField] float _destroyTime = 3f;
     [SerializeField] float _moveSpeed = 3f;
     Rigidbody _rb;
@@ -15,7 +16,10 @@ public class ArrowController : MonoBehaviour
         _rb = GetComponent<Rigidbody>();
         _rb.velocity = transform.forward * _moveSpeed;
     }
-
+    private void FixedUpdate()
+    {
+        _rb.velocity -= new Vector3(0,_gravity,0) * Time.deltaTime;
+    }
     private void OnCollisionEnter(Collision collision)
     {
         if(collision.collider.tag == "Field")
