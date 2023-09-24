@@ -18,7 +18,7 @@ public class AnimationController : MonoBehaviour
     [SerializeField] GameObject _arrowObject;
     [SerializeField] GameObject _arrowParticle;
     [SerializeField] GameObject _arrowStart;
-    [SerializeField] float _arrowOffset = 0f;
+    [SerializeField] float _targetDistance = 100f;
     private Animator _anim;
     private AnimatorStateInfo _currentBaseState;
     private AnimatorStateInfo _arrowState;
@@ -46,6 +46,9 @@ public class AnimationController : MonoBehaviour
             timer += Time.deltaTime;
             timer = Mathf.Clamp(timer, 0f, time);
             _anim.bodyRotation = _anim.bodyRotation * Quaternion.Euler(0, 90 * (timer / time), 0);
+            //_anim.SetIKPosition(AvatarIKGoal.LeftHand , _arrowStart.transform.position);
+            //_anim.SetIKPositionWeight(AvatarIKGoal.LeftHand , 0.8f);
+            
             _anim.SetIKPositionWeight(AvatarIKGoal.LeftFoot, 0.2f);
             _anim.SetIKPositionWeight(AvatarIKGoal.RightFoot, 0.1f);
             _anim.SetIKRotationWeight(AvatarIKGoal.LeftFoot, 0.4f);
@@ -77,9 +80,13 @@ public class AnimationController : MonoBehaviour
     {
         if (_arrowCharge > 0.5f)
         {
+            RaycastHit hit;
+            var ray = Camera.main.ViewportPointToRay(new Vector2(0.5f, 0.5f));
             _anim.SetTrigger("ArrowRelease");
-            Instantiate(_arrowParticle, _arrowStart.transform.position, _arrowStart.transform.rotation * 
-                Quaternion.Euler((!CameraManager._nowTPSCameraFlag) ? 0f : Camera.main.transform.rotation.eulerAngles.x + _arrowOffset, 0f,0f), null);
+            Instantiate(_arrowParticle, _arrowStart.transform.position, (!CameraManager._nowTPSCameraFlag) ? _arrowStart.transform.rotation
+                : Physics.Raycast(ray, out hit, _targetDistance) ? Quaternion.LookRotation((hit.point - _arrowStart.transform.position).normalized)
+                : Quaternion.LookRotation((Camera.main.transform.position + Camera.main.transform.forward * _targetDistance - _arrowStart.transform.position).normalized), null);
+            // Quaternion.identity * (hit.point - _arrowStart.transform.position).normalized
         }
         _arrowCharge = 0f;
         _arrowObject.SetActive(false);

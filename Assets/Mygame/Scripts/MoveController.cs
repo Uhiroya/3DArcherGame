@@ -151,7 +151,8 @@ public class MoveController : MonoBehaviour
         if (!CameraManager._nowTPSCameraFlag)
         {
             //FreeLook時の移動制御
-            var moveVelo = (transform.forward * _inputVertical).normalized * moveRate * _animMotionDrag;
+            //print(_inputVertical);
+            var moveVelo = transform.forward * _inputVertical * moveRate * _animMotionDrag;
             _nowVelocity = new Vector3(moveVelo.x, _rb.velocity.y, moveVelo.z);
             transform.Rotate(0, _inputHorizonal * _rotateSpeed, 0);
         }
@@ -162,9 +163,11 @@ public class MoveController : MonoBehaviour
             var CForward = Camera.main.transform.forward;
             var CRight = Camera.main.transform.right;
             transform.forward = new Vector3(CForward.x, 0f, CForward.z ).normalized;
-            var moveX = new Vector3(CForward.x , 0f, CForward.z) * _inputVertical;
-            var moveZ = new Vector3(CRight.x, 0f, CRight.z) * _inputHorizonal;
-            var dir = (moveX + moveZ).normalized * moveRate * _animMotionDrag;
+            //print(_inputVertical);
+            var moveX = new Vector3(CForward.x , 0f, CForward.z).normalized * _inputVertical;
+            var moveZ = new Vector3(CRight.x, 0f, CRight.z).normalized * _inputHorizonal;
+            var dir = ((moveX + moveZ).magnitude < 1f ? (moveX + moveZ) : (moveX + moveZ).normalized) * moveRate * _animMotionDrag;
+            //print((moveX + moveZ).magnitude);
             _nowVelocity = new Vector3(dir.x ,_rb.velocity.y , dir.z);
         }
         _rb.velocity = _nowVelocity;

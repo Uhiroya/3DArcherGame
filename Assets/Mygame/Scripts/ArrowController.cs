@@ -24,7 +24,8 @@ public class ArrowController : MonoBehaviour
     {
         if(collision.collider.tag == "Field")
         {
-            Instantiate(_destroyEffect , transform.position , transform.rotation ,null);
+            var obj = Instantiate(_destroyEffect , transform.position , transform.rotation ,null);
+            Destroy(obj , 3f);
             Destroy(gameObject);
         }
     }

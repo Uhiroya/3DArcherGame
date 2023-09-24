@@ -18,6 +18,7 @@ public class TPSCameraController : MonoBehaviour
     [SerializeField] private float _minDownAngle = -30f;
     [SerializeField] private float _maxUpAngle = 40f;
     [SerializeField] float _playerRotationY = 0f;
+    private float _dampingRate = 0.01f;
     bool _inisialized = false;
     Quaternion _preRotation = Quaternion.identity;
     private float _rotationY = 0f;
@@ -26,19 +27,25 @@ public class TPSCameraController : MonoBehaviour
     Quaternion _preCameraRot;
     Vector3 _offset;
     GameObject _offsetObj = null;
-    void OnEnable()
+    void Awake()
     {
         _offset = new Vector3(_xOffset, _yOffset, _zOffset);
         if ( _offsetObj == null)
         {
-            _offsetObj = Instantiate( new GameObject(),_target.position + _offset , _target.rotation ,_target);
+            _offsetObj = new GameObject();
+            _offsetObj.transform.SetParent(_target);
+            _offsetObj.transform.localPosition = _offset;
             _offsetObj.name = "CameraOffset";
         }
+
+    }
+    private void OnEnable()
+    {
         var CForward = Camera.main.transform.forward;
         _target.transform.forward = new Vector3(CForward.x, 0f, CForward.z).normalized;
         _preCameraPos = Camera.main.transform.position;
         _preCameraRot = Camera.main.transform.rotation;
-        StartCoroutine(StartFollow( () => Inisialized()));
+        StartCoroutine(StartFollow(() => Inisialized()));
     }
     private void OnDisable()
     {
@@ -51,7 +58,6 @@ public class TPSCameraController : MonoBehaviour
         {
             timer += Time.fixedDeltaTime ;
             Camera.main.transform.position = Vector3.Lerp(_preCameraPos, _offsetObj.transform.position - (_target.forward * _cameraRange), timer / _followTime);
-            //Camera.main.transform.position = Vector3.Lerp(_preCameraPos,  _target.transform.position - (_target.forward * _cameraRange), timer / _followTime);
             Camera.main.transform.rotation = Quaternion.Slerp(_preCameraRot, _target.rotation, timer / _followTime);
             yield return new WaitForFixedUpdate();
         }
@@ -64,6 +70,10 @@ public class TPSCameraController : MonoBehaviour
         _rotationY = 0;
         _inisialized = true;
     }
+
+
+
+    
     private void FixedUpdate()
     {
         if (_inisialized)
@@ -74,16 +84,22 @@ public class TPSCameraController : MonoBehaviour
             if (_playerRotate)
             {
                 _target.rotation = _preRotation * Quaternion.Euler(-_rotationY, _rotationX, 0f);
-                Camera.main.transform.position = _offsetObj.transform.position - (_target.forward * _cameraRange);
+                var nextCameraPos = _offsetObj.transform.position - (_target.forward * _cameraRange);
+                //print($"{(Camera.main.transform.position - nextCameraPos).magnitude} : damping : {(Camera.main.transform.position - nextCameraPos).magnitude} ");
+                Camera.main.transform.position = nextCameraPos;
                 Camera.main.transform.LookAt(_offsetObj.transform);
                 _target.rotation *= Quaternion.Euler(_rotationY, _playerRotationY, 0);
             }
             else
             {
                 _offsetObj.transform.rotation = _preRotation * Quaternion.Euler(-_rotationY, _rotationX, 0f);
-                Camera.main.transform.position = _offsetObj.transform.position - (_offsetObj.transform.forward * _cameraRange);
+                var nextCameraPos = _offsetObj.transform.position - (_offsetObj.transform.forward * _cameraRange);
+                //print($"{(Camera.main.transform.position - nextCameraPos).magnitude} : damping : {(Camera.main.transform.position - nextCameraPos).magnitude * _dampingRate} ");
+                Camera.main.transform.position = Vector3.Slerp(Camera.main.transform.position, nextCameraPos, (Camera.main.transform.position - nextCameraPos).magnitude * _dampingRate);
+                //Camera.main.transform.position = nextCameraPos;
                 Camera.main.transform.LookAt(_offsetObj.transform);
             }
+
         }
     }
     void Update()

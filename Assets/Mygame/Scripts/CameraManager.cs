@@ -48,8 +48,8 @@ public class CameraManager : MonoBehaviour
             TPSCamera.SetActive(false);
             _nowTPSCameraFlag = false;
             _targetImage.SetActive(false);
-            Cursor.visible = true;
-            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible = false;
+            Cursor.lockState = CursorLockMode.Locked;
         }
     }
 }
