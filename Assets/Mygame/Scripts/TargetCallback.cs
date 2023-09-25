@@ -18,10 +18,9 @@ public class TargetCallback : MonoBehaviour
         {
             Destroy(other.gameObject);
             Debug.Log(_thisScore);
-            transform.root.GetComponent<GeneratorController>().DestroyTarget();
-            transform.parent.parent.GetComponent<TargetGenerator>().HitMyTarget(_thisScore);
             _onhit?.Invoke(_thisScore);
-            
+            transform.parent.parent.GetComponent<TargetGenerator>().HitMyTarget(_thisScore);
+            transform.root.GetComponent<GeneratorController>().DestroyTarget();    
         }
     }
     private void OnCollisionStay(Collision other)

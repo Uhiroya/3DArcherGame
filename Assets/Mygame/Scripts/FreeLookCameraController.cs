@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.Xml.Serialization;
 using UnityEngine;
 using System.Linq;
-using UnityEditor.Rendering;
 
 public class FreeLookCameraController : MonoBehaviour
 {

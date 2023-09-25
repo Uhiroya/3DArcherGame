@@ -286,4 +286,4 @@ MonoBehaviour:
   _destroyEffect: {fileID: 5677834868621343731, guid: 9a2393f2dabb65a4d84c8666916f39d4, type: 3}
   _gravity: 5
   _destroyTime: 3
-  _moveSpeed: 60
+  _moveSpeed: 80

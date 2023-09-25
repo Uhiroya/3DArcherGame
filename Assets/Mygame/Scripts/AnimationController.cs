@@ -15,6 +15,8 @@ using DG.Tweening;
 public class AnimationController : MonoBehaviour
 {
     [SerializeField] ParentConstraint _bowStringConstraint;
+    [SerializeField] PositionConstraint _resetBowStringConstraint;
+
     [SerializeField] GameObject _arrowObject;
     [SerializeField] GameObject _arrowParticle;
     [SerializeField] GameObject _arrowStart;
@@ -71,6 +73,7 @@ public class AnimationController : MonoBehaviour
     public void ArrowCharge()
     {
         _arrowObject.SetActive(true);
+        _resetBowStringConstraint.constraintActive = false;
         _bowStringConstraint.constraintActive = true;
         _anim.SetBool("ArrowCharge", true);
         _anim.SetLayerWeight(_arrowMortionLayerIndex, _arrowCharge + 0.5f);
@@ -81,10 +84,11 @@ public class AnimationController : MonoBehaviour
         if (_arrowCharge > 0.5f)
         {
             RaycastHit hit;
+            LayerMask mask =  ~( 1 << LayerMask.NameToLayer("Wall"));
             var ray = Camera.main.ViewportPointToRay(new Vector2(0.5f, 0.5f));
             _anim.SetTrigger("ArrowRelease");
             Instantiate(_arrowParticle, _arrowStart.transform.position, (!CameraManager._nowTPSCameraFlag) ? _arrowStart.transform.rotation
-                : Physics.Raycast(ray, out hit, _targetDistance) ? Quaternion.LookRotation((hit.point - _arrowStart.transform.position).normalized)
+                : Physics.Raycast(ray, out hit ,_targetDistance ,mask) ? Quaternion.LookRotation((hit.point - _arrowStart.transform.position).normalized)
                 : Quaternion.LookRotation((Camera.main.transform.position + Camera.main.transform.forward * _targetDistance - _arrowStart.transform.position).normalized), null);
             // Quaternion.identity * (hit.point - _arrowStart.transform.position).normalized
         }
@@ -92,6 +96,7 @@ public class AnimationController : MonoBehaviour
         _arrowObject.SetActive(false);
         _anim.SetBool("ArrowCharge", false);
         _bowStringConstraint.constraintActive = false;
+        _resetBowStringConstraint.constraintActive = true;
         flag = false;
         _anim.SetLayerWeight(_arrowMortionLayerIndex, 0f);
     }

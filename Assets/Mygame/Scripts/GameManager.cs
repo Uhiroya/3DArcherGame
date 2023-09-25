@@ -83,8 +83,6 @@ public class GameManager : MonoBehaviour
     public void GameOver()
     {
         _endEvent?.Invoke();
-        _scoreText.gameObject.transform.parent.gameObject.SetActive(false);
-        _timeText.gameObject.transform.parent.gameObject.SetActive(false);
         if(_nowScore > _highScore)
         {
             _highScore = _nowScore;

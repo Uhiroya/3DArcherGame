@@ -12,8 +12,8 @@ public class TPSCameraController : MonoBehaviour
     [SerializeField] float _zOffset = 0f;
     [SerializeField] float _offsetLimit = 15.0f;
     [SerializeField] float _offsetSpeed = 1.0f;
-    [SerializeField] float _xSensibility = 3f;
-    [SerializeField] float _ySensibility = 3f;
+    public float _xSensibility = 3f;
+    public  float _ySensibility = 3f;
     [SerializeField] float _followTime = 1f;
     [SerializeField] private float _minDownAngle = -30f;
     [SerializeField] private float _maxUpAngle = 40f;

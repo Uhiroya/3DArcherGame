@@ -5,7 +5,7 @@ using UnityEngine;
 public class GeneratorController : MonoBehaviour
 {
     int targetCount;
-    private void Awake()
+    private void Start()
     {
         gameObject.SetActive(false);
     }
