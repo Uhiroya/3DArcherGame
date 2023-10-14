@@ -3,13 +3,14 @@ using System.Collections;
 using System.Runtime.CompilerServices;
 using UnityEngine.Animations;
 using DG.Tweening;
+using UnityEngine.InputSystem;
 
 
 // 必要なコンポーネントの列記
 [RequireComponent(typeof(Animator))]
 [RequireComponent(typeof(CapsuleCollider))]
 [RequireComponent(typeof(Rigidbody))]
-
+//https://discussions.unity.com/t/how-to-control-aixs-gravity-sensitivity-in-new-input-system/231461/5
 public class MoveController : MonoBehaviour
 {
     [SerializeField] float _forwardSpeed = 7.0f;
@@ -17,7 +18,8 @@ public class MoveController : MonoBehaviour
     [SerializeField] float _sidewardSpeed = 4.0f;
     [SerializeField] float _rotateSpeed = 2.0f;
     [SerializeField] float _jumpPower = 3.0f;
-
+    [SerializeField] float minInputValue;
+    [SerializeField] float inputGravity;
     public AnimatorStateInfo CurrentBaseState;
     public AnimatorStateInfo ArrowState;
     float _animMotionDrag = 1f;
@@ -27,6 +29,8 @@ public class MoveController : MonoBehaviour
     Rigidbody _rb;
     Animator _anim;
     Vector3 _nowVelocity;
+    Vector2 _usegravityInputValue = Vector2.zero;
+    Vector2 _inputVec;
     float _nextJumpTimer = 0f;
     public enum JumpStatePattern
     {
@@ -50,14 +54,49 @@ public class MoveController : MonoBehaviour
         _ac = GetComponent<AnimationController>();
         _anim = GetComponent<Animator>();
         _rb = GetComponent<Rigidbody>();
+    }
+    Inputter _myJumpEnterInputter;
+    Inputter _myJumpExitInputter;
+    Inputter _myArrowFireEnterInputter;
+    Inputter _myArrowFireExitInputter;
+
+    private void OnEnable()
+    {
+        _myJumpEnterInputter = new(InputModeType.InGame, InputActionType.Jump, ExecuteType.Enter, JumpStart);
+        _myJumpExitInputter = new(InputModeType.InGame, InputActionType.Jump, ExecuteType.Exit, JumpEnd);
+        _myArrowFireEnterInputter = new(InputModeType.InGame, InputActionType.Fire1, ExecuteType.Enter, ArrowFireStart);
+        _myArrowFireExitInputter = new(InputModeType.InGame, InputActionType.Fire1, ExecuteType.Exit, ArrowFireEnd);
+
+        InputProvider.MoveCallback.AddListener(MovePlayer);
+        InputProvider.Regist(_myJumpEnterInputter);
+        InputProvider.Regist(_myJumpExitInputter);
+        InputProvider.Regist(_myArrowFireEnterInputter);
+        InputProvider.Regist(_myArrowFireExitInputter);
 
     }
-    void Update()
+    private void OnDisable()
     {
-        _inputHorizonal = Input.GetAxis("Horizontal");              
-        _inputVertical = Input.GetAxis("Vertical");
+        InputProvider.MoveCallback.RemoveListener(MovePlayer);
+        InputProvider.UnRegist(_myJumpEnterInputter);
+        InputProvider.UnRegist(_myJumpExitInputter);
+        InputProvider.UnRegist(_myArrowFireEnterInputter);
+        InputProvider.UnRegist(_myArrowFireExitInputter);
+    }
+    private Vector2 UseInputGravity(Vector2 controlInputValue)
+    {
+        _usegravityInputValue.x = Mathf.MoveTowards(
+            _usegravityInputValue.x, controlInputValue.x, Time.fixedDeltaTime * inputGravity
+        );
+        _usegravityInputValue.y = Mathf.MoveTowards(
+            _usegravityInputValue.y, controlInputValue.y, Time.fixedDeltaTime * inputGravity
+        );
+        return _usegravityInputValue;
+    }
+    void MovePlayer(Vector2 inputVec2) => _inputVec = inputVec2;
+    private void Update()
+    {
         _anim.SetFloat("velocity_y", _rb.velocity.y);
-        if (!CameraManager._nowTPSCameraFlag) //フリーカメラ時のアニメーション制御
+        if (CameraManager._nowCameraMode == MyTPSCamera.CameraMode.FreeLookMode) //フリーカメラ時のアニメーション制御
         {
             if (_animState == AnimStatePattern.ArrowFire)
             {
@@ -74,12 +113,12 @@ public class MoveController : MonoBehaviour
         {
             if (_animState == AnimStatePattern.ArrowFire)
             {
-                _anim.SetFloat("Speed", Mathf.Clamp(_inputVertical != 0 ? _inputVertical : _inputHorizonal, -1f, 0.2f));
+                _anim.SetFloat("Speed", Mathf.Clamp(_inputVertical < 0 ? _inputVertical : _inputHorizonal + _inputVertical, -1f, 0.2f));
                 _anim.SetFloat("Direction", 0f);
             }
             else
             {
-                _anim.SetFloat("Speed", _inputVertical != 0  ? _inputVertical : Mathf.Abs(_inputHorizonal * (_sidewardSpeed / _forwardSpeed)));
+                _anim.SetFloat("Speed", _inputVertical < 0 ? _inputVertical : Mathf.Abs(_inputHorizonal) + _inputVertical);
                 _anim.SetFloat("Direction", _inputHorizonal);
             }
         }
@@ -89,41 +128,46 @@ public class MoveController : MonoBehaviour
             _animMotionDrag = 0.5f;
         else
             _animMotionDrag = 1f;
-        ArrowFireAction();
-        if(!CameraManager._nowTPSCameraFlag || _jumpState != JumpStatePattern.Landing)
-            JumpAction();
-    }
-    void ArrowFireAction()
-    {
-        if (Input.GetMouseButtonDown(0))
-        {
-            _animState = AnimStatePattern.ArrowFire;
-            _ac.ArrowChargeStart();
-        }
-        if (Input.GetMouseButton(0))
-        {
+        JumpAction();
+        if(_animState == AnimStatePattern.ArrowFire)
             _ac.ArrowCharge();
-        }
-        if (Input.GetMouseButtonUp(0))
-        {
-            _ac.ArrowRelease();
-            _animState = AnimStatePattern.Idle;
-        }
     }
-
-    void JumpAction()
+    void ArrowFireStart()
     {
-        if (Input.GetButtonDown("Jump") && _jumpState == JumpStatePattern.Landing)
+        print("ArrowStart");
+        _animState = AnimStatePattern.ArrowFire;
+        _ac.ArrowChargeStart();
+    }
+    void ArrowFireEnd()
+    {
+        _ac.ArrowRelease();
+        _animState = AnimStatePattern.Idle;
+    }
+    void JumpStart()
+    {
+        
+        if (CameraManager._nowCameraMode != MyTPSCamera.CameraMode.FreeLookMode || _jumpState != JumpStatePattern.Landing)
         {
+            return;
+        }
+        if (_jumpState == JumpStatePattern.Landing)
+        {
+            print("Jump!!!!");
             _jumpState = JumpStatePattern.JumpWait;
             _ac.JumpWait();
         }
-        if (Input.GetButtonUp("Jump") && _jumpState == JumpStatePattern.JumpWait)
+    }
+    void JumpEnd()
+    {
+        if ( _jumpState == JumpStatePattern.JumpWait)
         {
             _jumpState = JumpStatePattern.JumpNow;
             _rb.AddForce(Vector3.up * _jumpPower, ForceMode.VelocityChange);
             _ac.JumpUp();
         }
+    }
+    void JumpAction()
+    {
         if (_jumpState == JumpStatePattern.JumpNow)
         {
             if (_rb.velocity.y < 0)
@@ -139,16 +183,22 @@ public class MoveController : MonoBehaviour
                 _nextJumpTimer += Time.deltaTime;
                 if (_nextJumpTimer > 0.5f)
                 {
-                    _jumpState = JumpStatePattern.Landing;
                     _nextJumpTimer = 0f;
+                    _jumpState = JumpStatePattern.Landing;
                 }
             }
         }
+
     }
+
+
     void FixedUpdate()
     {
+        var moveVec2 = UseInputGravity(_inputVec);
+        _inputHorizonal = moveVec2.x;
+        _inputVertical = moveVec2.y;
         float moveRate = ( _inputVertical >= 0 ) ?_forwardSpeed : _backwardSpeed;
-        if (!CameraManager._nowTPSCameraFlag)
+        if (CameraManager._nowCameraMode == MyTPSCamera.CameraMode.FreeLookMode)
         {
             //FreeLook時の移動制御
             //print(_inputVertical);

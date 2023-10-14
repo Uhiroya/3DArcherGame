@@ -8,7 +8,6 @@ using UnityEngine.UI;
 
 public class GameManager : MonoBehaviour
 {
-
     [SerializeField] Text _scoreText;
     [SerializeField] Text _highScoreText;
     [SerializeField] Text _countDownText;

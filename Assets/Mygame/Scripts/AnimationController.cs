@@ -87,7 +87,7 @@ public class AnimationController : MonoBehaviour
             LayerMask mask =  ~( 1 << LayerMask.NameToLayer("Wall"));
             var ray = Camera.main.ViewportPointToRay(new Vector2(0.5f, 0.5f));
             _anim.SetTrigger("ArrowRelease");
-            Instantiate(_arrowParticle, _arrowStart.transform.position, (!CameraManager._nowTPSCameraFlag) ? _arrowStart.transform.rotation
+            Instantiate(_arrowParticle, _arrowStart.transform.position, (CameraManager._nowCameraMode == MyTPSCamera.CameraMode.FreeLookMode) ? _arrowStart.transform.rotation
                 : Physics.Raycast(ray, out hit ,_targetDistance ,mask) ? Quaternion.LookRotation((hit.point - _arrowStart.transform.position).normalized)
                 : Quaternion.LookRotation((Camera.main.transform.position + Camera.main.transform.forward * _targetDistance - _arrowStart.transform.position).normalized), null);
             // Quaternion.identity * (hit.point - _arrowStart.transform.position).normalized

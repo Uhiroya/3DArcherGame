@@ -1,4 +1,5 @@
 using Cinemachine;
+using JetBrains.Annotations;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -11,7 +12,8 @@ public class CameraManager : MonoBehaviour
     [SerializeField] GameObject TPSCamera;
     [SerializeField] GameObject Sholder;
     [SerializeField] GameObject _targetImage ;
-    public static bool _nowTPSCameraFlag = false;
+    [SerializeField] GameObject _optionImage ;
+    public static MyTPSCamera.CameraMode _nowCameraMode ;
     private bool _IsOption = false;
     private void Awake()
     {
@@ -27,18 +29,21 @@ public class CameraManager : MonoBehaviour
     }
     void Start()
     {
+        _nowCameraMode = GetComponentInChildren<MyTPSCamera>()._cameraMode;
         Cursor.visible = false;
         Cursor.lockState = CursorLockMode.Locked;
     }
     public void OpenSetting()
     {
         _IsOption = true;
+        _optionImage.SetActive(true);
         Cursor.visible = true;
         Cursor.lockState = CursorLockMode.None;
     }
     public void CloseSetting()
     {
         _IsOption = false;
+        _optionImage.SetActive(false);
         Cursor.visible = false;
         Cursor.lockState = CursorLockMode.Locked;
     }
@@ -49,8 +54,8 @@ public class CameraManager : MonoBehaviour
         {
             FreeLookCamera.SetActive(false);
             TPSCamera.SetActive(true);
-            _nowTPSCameraFlag = true;
             _targetImage.SetActive(true);
+            _nowCameraMode = TPSCamera.GetComponent<MyTPSCamera>()._cameraMode;
             Cursor.visible = false;
             Cursor.lockState = CursorLockMode.Locked;
         }
@@ -58,15 +63,21 @@ public class CameraManager : MonoBehaviour
         {
             FreeLookCamera.SetActive(true);
             TPSCamera.SetActive(false);
-            _nowTPSCameraFlag = false;
             _targetImage.SetActive(false);
+            _nowCameraMode = FreeLookCamera.GetComponent<MyTPSCamera>()._cameraMode;
             Cursor.visible = false;
             Cursor.lockState = CursorLockMode.Locked;
         }
         if(Input.GetKeyDown(KeyCode.Escape))
         {
-            Cursor.visible = true;
-            Cursor.lockState = CursorLockMode.None;
+            if (!_IsOption)
+            {
+                OpenSetting();
+            }
+            else
+            {
+                CloseSetting();
+            }
         }
     }
 }
