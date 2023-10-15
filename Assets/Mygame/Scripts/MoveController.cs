@@ -3,7 +3,8 @@ using System.Collections;
 using System.Runtime.CompilerServices;
 using UnityEngine.Animations;
 using DG.Tweening;
-using UnityEngine.InputSystem;
+//using UnityEngine.InputSystem;
+using MyInput;
 
 
 // 必要なコンポーネントの列記
@@ -54,6 +55,7 @@ public class MoveController : MonoBehaviour
         _ac = GetComponent<AnimationController>();
         _anim = GetComponent<Animator>();
         _rb = GetComponent<Rigidbody>();
+        print(InputRebinder.FindKeyName("Jump"));
     }
     Inputter _myJumpEnterInputter;
     Inputter _myJumpExitInputter;

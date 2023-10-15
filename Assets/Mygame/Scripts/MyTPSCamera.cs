@@ -36,7 +36,7 @@ public class MyTPSCamera : MonoBehaviour
         TPSMode,
         FreeLookMode,
     }
-
+    
     void Awake()
     {
         //targetの子オブジェクトにカメラターゲットを生成する
