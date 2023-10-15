@@ -5424,7 +5424,6 @@ GameObject:
   m_Component:
   - component: {fileID: 604564536}
   - component: {fileID: 614663394}
-  - component: {fileID: 614663395}
   m_Layer: 9
   m_Name: J_L_HeadRibbon_00
   m_TagString: Untagged
@@ -5590,7 +5589,6 @@ GameObject:
   m_Component:
   - component: {fileID: 604564556}
   - component: {fileID: 614663186}
-  - component: {fileID: 614663187}
   m_Layer: 9
   m_Name: J_R_HairTail_00
   m_TagString: Untagged
@@ -6068,7 +6066,6 @@ GameObject:
   m_Component:
   - component: {fileID: 604564870}
   - component: {fileID: 614663170}
-  - component: {fileID: 614663171}
   m_Layer: 9
   m_Name: J_R_HairSide_00
   m_TagString: Untagged
@@ -6152,7 +6149,6 @@ GameObject:
   m_Component:
   - component: {fileID: 604564880}
   - component: {fileID: 614663172}
-  - component: {fileID: 614663173}
   m_Layer: 9
   m_Name: J_L_HairTail_00
   m_TagString: Untagged
@@ -6531,7 +6527,6 @@ GameObject:
   m_Component:
   - component: {fileID: 604564676}
   - component: {fileID: 614663372}
-  - component: {fileID: 614663373}
   m_Layer: 9
   m_Name: J_L_HairFront_00
   m_TagString: Untagged
@@ -6813,7 +6808,6 @@ GameObject:
   m_Component:
   - component: {fileID: 604564712}
   - component: {fileID: 614663410}
-  - component: {fileID: 614663411}
   m_Layer: 9
   m_Name: J_L_HairSide_00
   m_TagString: Untagged
@@ -6981,7 +6975,6 @@ GameObject:
   m_Component:
   - component: {fileID: 604564480}
   - component: {fileID: 614663416}
-  - component: {fileID: 614663417}
   m_Layer: 9
   m_Name: J_R_HairFront_00
   m_TagString: Untagged
@@ -7499,7 +7492,6 @@ GameObject:
   m_Component:
   - component: {fileID: 604564926}
   - component: {fileID: 614663222}
-  - component: {fileID: 614663223}
   m_Layer: 9
   m_Name: J_R_HeadRibbon_00
   m_TagString: Untagged
@@ -8312,18 +8304,6 @@ MonoBehaviour:
   colliders: []
   debug: 1
   threshold: 0.01
---- !u!114 &614663171
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 604991590}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d50304acf5685574c8fcc8dda7f383a2, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!114 &614663172
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -8348,18 +8328,6 @@ MonoBehaviour:
   - {fileID: 614663212}
   debug: 1
   threshold: 0.01
---- !u!114 &614663173
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 604991600}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d50304acf5685574c8fcc8dda7f383a2, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!114 &614663174
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -8520,18 +8488,6 @@ MonoBehaviour:
   - {fileID: 614663212}
   debug: 1
   threshold: 0.01
---- !u!114 &614663187
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 604991532}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d50304acf5685574c8fcc8dda7f383a2, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!114 &614663188
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -8858,18 +8814,6 @@ MonoBehaviour:
   - {fileID: 614663408}
   debug: 1
   threshold: 0.01
---- !u!114 &614663223
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 604991902}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d50304acf5685574c8fcc8dda7f383a2, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!114 &614663224
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -9085,18 +9029,6 @@ MonoBehaviour:
   colliders: []
   debug: 1
   threshold: 0.01
---- !u!114 &614663373
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 604991652}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d50304acf5685574c8fcc8dda7f383a2, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!114 &614663374
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -9172,18 +9104,6 @@ MonoBehaviour:
   - {fileID: 614663408}
   debug: 1
   threshold: 0.01
---- !u!114 &614663395
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 604991512}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d50304acf5685574c8fcc8dda7f383a2, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!114 &614663396
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -9355,18 +9275,6 @@ MonoBehaviour:
   colliders: []
   debug: 1
   threshold: 0.01
---- !u!114 &614663411
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 604991688}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d50304acf5685574c8fcc8dda7f383a2, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!114 &614663412
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -9439,18 +9347,6 @@ MonoBehaviour:
   colliders: []
   debug: 1
   threshold: 0.01
---- !u!114 &614663417
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 604991712}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d50304acf5685574c8fcc8dda7f383a2, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!114 &614663418
 MonoBehaviour:
   m_ObjectHideFlags: 0

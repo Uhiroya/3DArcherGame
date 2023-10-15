@@ -55,7 +55,7 @@ public class MoveController : MonoBehaviour
         _ac = GetComponent<AnimationController>();
         _anim = GetComponent<Animator>();
         _rb = GetComponent<Rigidbody>();
-        print(InputRebinder.FindKeyName("Jump"));
+        //print(InputRebinder.FindKeyName("Jump"));
     }
     Inputter _myJumpEnterInputter;
     Inputter _myJumpExitInputter;
@@ -69,20 +69,20 @@ public class MoveController : MonoBehaviour
         _myArrowFireEnterInputter = new(InputModeType.InGame, InputActionType.Fire1, ExecuteType.Enter, ArrowFireStart);
         _myArrowFireExitInputter = new(InputModeType.InGame, InputActionType.Fire1, ExecuteType.Exit, ArrowFireEnd);
 
-        InputProvider.MoveCallback.AddListener(MovePlayer);
-        InputProvider.Regist(_myJumpEnterInputter);
-        InputProvider.Regist(_myJumpExitInputter);
-        InputProvider.Regist(_myArrowFireEnterInputter);
-        InputProvider.Regist(_myArrowFireExitInputter);
+        GA.Input.MoveCallback.AddListener(MovePlayer);
+        GA.Input.Regist(_myJumpEnterInputter);
+        GA.Input.Regist(_myJumpExitInputter);
+        GA.Input.Regist(_myArrowFireEnterInputter);
+        GA.Input.Regist(_myArrowFireExitInputter);
 
     }
     private void OnDisable()
     {
-        InputProvider.MoveCallback.RemoveListener(MovePlayer);
-        InputProvider.UnRegist(_myJumpEnterInputter);
-        InputProvider.UnRegist(_myJumpExitInputter);
-        InputProvider.UnRegist(_myArrowFireEnterInputter);
-        InputProvider.UnRegist(_myArrowFireExitInputter);
+        GA.Input.MoveCallback.RemoveListener(MovePlayer);
+        GA.Input.UnRegist(_myJumpEnterInputter);
+        GA.Input.UnRegist(_myJumpExitInputter);
+        GA.Input.UnRegist(_myArrowFireEnterInputter);
+        GA.Input.UnRegist(_myArrowFireExitInputter);
     }
     private Vector2 UseInputGravity(Vector2 controlInputValue)
     {
@@ -97,6 +97,14 @@ public class MoveController : MonoBehaviour
     void MovePlayer(Vector2 inputVec2) => _inputVec = inputVec2;
     private void Update()
     {
+        if (GA.Input.GetKeyDown(InputActionType.Jump, UpdateMode.Update))
+        {
+            print("Update : Jumpボタンが押されました");
+        }
+        if (GA.Input.GetKeyUp(InputActionType.Jump, UpdateMode.Update))
+        {
+            print("Update : Jumpボタンが離れました");
+        }
         _anim.SetFloat("velocity_y", _rb.velocity.y);
         if (CameraManager._nowCameraMode == MyTPSCamera.CameraMode.FreeLookMode) //フリーカメラ時のアニメーション制御
         {
@@ -154,7 +162,6 @@ public class MoveController : MonoBehaviour
         }
         if (_jumpState == JumpStatePattern.Landing)
         {
-            print("Jump!!!!");
             _jumpState = JumpStatePattern.JumpWait;
             _ac.JumpWait();
         }
@@ -196,6 +203,10 @@ public class MoveController : MonoBehaviour
 
     void FixedUpdate()
     {
+        //if (GA.Input.ActionConditionContainer[new ActionUpdateMode(InputActionType.Jump, UpdateMode.FixedUpdate)] == ExecuteType.Enter)
+        //{
+        //    print("FixedUpdate : Jumpボタンが押されました");
+        //}
         var moveVec2 = UseInputGravity(_inputVec);
         _inputHorizonal = moveVec2.x;
         _inputVertical = moveVec2.y;

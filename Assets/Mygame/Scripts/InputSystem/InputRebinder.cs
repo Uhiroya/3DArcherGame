@@ -8,14 +8,14 @@ public static class InputRebinder
 {
     static InputActionRebindingExtensions.RebindingOperation _rebindOperation = null;
     public static string FindKeyName(string actionName) => 
-        InputProvider.Controller.FindAction(actionName).GetBindingDisplayString();
+        GA.Input.Controller.FindAction(actionName).GetBindingDisplayString();
     public static int GetKeyBindIndex(string actionName) =>
-        InputProvider.Controller.FindAction(actionName).GetBindingIndex();
+        GA.Input.Controller.FindAction(actionName).GetBindingIndex();
 
     public static void ReBind(string actionName , Action<string> displayAction)
     {
-        InputProvider.Controller.Disable();
-        _rebindOperation = InputProvider.Controller.FindAction(actionName).
+        GA.Input.Controller.Disable();
+        _rebindOperation = GA.Input.Controller.FindAction(actionName).
             PerformInteractiveRebinding()
             .WithTargetBinding(GetKeyBindIndex(actionName))
             .OnComplete( _ => {
@@ -29,6 +29,6 @@ public static class InputRebinder
     {
         _rebindOperation.Dispose();
         _rebindOperation = null;
-        InputProvider.Controller.Enable();
+        GA.Input.Controller.Enable();
     }
 }

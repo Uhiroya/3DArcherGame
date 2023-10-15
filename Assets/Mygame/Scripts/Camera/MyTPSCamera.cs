@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using System;
+
 public class MyTPSCamera : MonoBehaviour
 {
     /// <summary>
@@ -51,7 +52,7 @@ public class MyTPSCamera : MonoBehaviour
     }
     private void OnEnable()
     {
-        InputProvider.MouseCallback.AddListener(GetInputMouseMove);
+        GA.Input.MouseCallback.AddListener(GetInputMouseMove);
         //アクティブ時にターゲット対象をカメラ正面に向ける
         var CForward = Camera.main.transform.forward;
         _target.transform.forward = new Vector3(CForward.x, 0f, CForward.z).normalized;
@@ -62,7 +63,7 @@ public class MyTPSCamera : MonoBehaviour
     }
     private void OnDisable()
     {
-        InputProvider.MouseCallback.RemoveListener(GetInputMouseMove);
+        GA.Input.MouseCallback.RemoveListener(GetInputMouseMove);
         _isInitialized = false;
     }
     IEnumerator StartFollow(Action callback)
