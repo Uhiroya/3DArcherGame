@@ -31,7 +31,6 @@ public class MoveController : MonoBehaviour
     Animator _anim;
     Vector3 _nowVelocity;
     Vector2 _usegravityInputValue = Vector2.zero;
-    Vector2 _inputVec;
     float _nextJumpTimer = 0f;
     public enum JumpStatePattern
     {
@@ -55,33 +54,45 @@ public class MoveController : MonoBehaviour
         _ac = GetComponent<AnimationController>();
         _anim = GetComponent<Animator>();
         _rb = GetComponent<Rigidbody>();
-        //print(InputRebinder.FindKeyName("Jump"));
     }
     Inputter _myJumpEnterInputter;
     Inputter _myJumpExitInputter;
     Inputter _myArrowFireEnterInputter;
     Inputter _myArrowFireExitInputter;
+    Inputter _debugPrinter;
+    Inputter _debugPrinter1;
+    Inputter _debugPrinter2;
 
     private void OnEnable()
     {
         _myJumpEnterInputter = new(InputModeType.InGame, InputActionType.Jump, ExecuteType.Enter, UpdateMode.Update,JumpStart);
         _myJumpExitInputter = new(InputModeType.InGame, InputActionType.Jump, ExecuteType.Exit, UpdateMode.Update, JumpEnd);
         _myArrowFireEnterInputter = new(InputModeType.InGame, InputActionType.Fire1, ExecuteType.Enter, UpdateMode.Update, ArrowFireStart);
+
         _myArrowFireExitInputter = new(InputModeType.InGame, InputActionType.Fire1, ExecuteType.Exit, UpdateMode.Update, ArrowFireEnd);
-        //GA.Input.MoveCallback.AddListener(MovePlayer);
+        _debugPrinter = new(InputModeType.InGame, InputActionType.Jump, ExecuteType.Enter, UpdateMode.Update,()=> Debug.Log("Jumpはじめ"));
+        _debugPrinter1 = new(InputModeType.InGame, InputActionType.Jump, ExecuteType.Performed, UpdateMode.FixedUpdate,()=> Debug.Log("Jump中！！！"));
+        _debugPrinter2 = new(InputModeType.InGame, InputActionType.Jump, ExecuteType.Exit, UpdateMode.Update,()=> Debug.Log("Jumpおわり！！！"));
+        GA.Input.MoveCallback.AddListener(MovePlayer);
         GA.Input.Regist(_myJumpEnterInputter);
         GA.Input.Regist(_myJumpExitInputter);
         GA.Input.Regist(_myArrowFireEnterInputter);
         GA.Input.Regist(_myArrowFireExitInputter);
+        GA.Input.Regist(_debugPrinter);
+        GA.Input.Regist(_debugPrinter1);
+        GA.Input.Regist(_debugPrinter2);
 
     }
     private void OnDisable()
     {
-        //GA.Input.MoveCallback.RemoveListener(MovePlayer);
+        GA.Input.MoveCallback.RemoveListener(MovePlayer);
         GA.Input.UnRegist(_myJumpEnterInputter);
         GA.Input.UnRegist(_myJumpExitInputter);
         GA.Input.UnRegist(_myArrowFireEnterInputter);
         GA.Input.UnRegist(_myArrowFireExitInputter);
+        GA.Input.UnRegist(_debugPrinter);
+        GA.Input.UnRegist(_debugPrinter1);
+        GA.Input.UnRegist(_debugPrinter2);
     }
     private Vector2 UseInputGravity(Vector2 controlInputValue)
     {
@@ -93,17 +104,9 @@ public class MoveController : MonoBehaviour
         );
         return _usegravityInputValue;
     }
-    void MovePlayer(Vector2 inputVec2) => _inputVec = inputVec2;
+    
     private void Update()
     {
-        if (GA.Input.GetKeyDown(InputActionType.Jump, UpdateMode.Update))
-        {
-            print("Update : Jumpボタンが押されました");
-        }
-        if (GA.Input.GetKeyUp(InputActionType.Jump, UpdateMode.Update))
-        {
-            print("Update : Jumpボタンが離れました");
-        }
         _anim.SetFloat("velocity_y", _rb.velocity.y);
         if (CameraManager._nowCameraMode == MyTPSCamera.CameraMode.FreeLookMode) //フリーカメラ時のアニメーション制御
         {
@@ -200,9 +203,9 @@ public class MoveController : MonoBehaviour
     }
 
 
-    void FixedUpdate()
+    void MovePlayer(Vector2 inputVec2) 
     {
-        var moveVec2 = UseInputGravity(_inputVec);
+        var moveVec2 = UseInputGravity(inputVec2);
         _inputHorizonal = moveVec2.x;
         _inputVertical = moveVec2.y;
         float moveRate = ( _inputVertical >= 0 ) ?_forwardSpeed : _backwardSpeed;

@@ -9,14 +9,10 @@ public static partial class GA
 {
     public static InputProvider Input = new();
 }
-
-
 public class InputProvider
 {
     private static Vector2 _moveDir = Vector2.zero;
-    /// <summary> 移動入力監視用 </summary>
     public static Vector2 MoveDir => _moveDir;
-    ////キーボード入力の場合入力変化がないため1度しか呼ばれないので、MoveDirを監視してもらう。
     ///// <summary> 移動入力コールバック登録用 </summary>
     public UnityEvent<Vector2> MoveCallback = new();
     /// <summary> マウス入力コールバック登録用 </summary>
@@ -24,15 +20,22 @@ public class InputProvider
     /// <summary>/// ボタン入力コールバック登録用/// </summary>
     public void Regist(in Inputter inputter)
     {
+        
         switch (inputter.InputMode)
         {
             case InputModeType.InGame:
+                if (!_inGameInputContainer.ContainsKey(inputter.InputType))
+                    _inGameInputContainer.Add(inputter.InputType , null);
                 _inGameInputContainer[inputter.InputType] += inputter.Action;
                 break;
             case InputModeType.Menu:
+                if (!_menuInputContainer.ContainsKey(inputter.InputType))
+                    _menuInputContainer.Add(inputter.InputType, null);
                 _menuInputContainer[inputter.InputType] += inputter.Action;
                 break;
             case InputModeType.Other:
+                if (!_menuInputContainer.ContainsKey(inputter.InputType))
+                    _menuInputContainer.Add(inputter.InputType, null);
                 _otherInputContainer[inputter.InputType] += inputter.Action;
                 break;
             default:
@@ -60,7 +63,7 @@ public class InputProvider
     /// <summary>入力モード変更/// </summary>
     public void ModeChange(InputModeType inputMode) => _mode = inputMode;
     
-    class MyConditioner : MonoBehaviour
+    class MyInputUpdator : MonoBehaviour
     {
         private void Awake()
         {
@@ -77,102 +80,79 @@ public class InputProvider
             set
             {
                 ActionConditionContainer[key.Item1] = value;
-                StartCoroutine( ChangeMode(key.Item1, value));
-            }
-        }
-        void Update()
-        {
-            switch (GA.Input._mode)
-            {
-                case InputModeType.InGame:
-                    foreach (InputActionType inputActionType in Enum.GetValues(typeof(InputActionType)))
-                    {
-                        GA.Input._inGameInputContainer[new InputType(ActionConditionContainer[new ActionUpdateMode(inputActionType, UpdateMode.Update)], inputActionType , UpdateMode.Update)]?.Invoke();
-                    }
-                    break;
-                case InputModeType.Menu:
-                    foreach (InputActionType inputActionType in Enum.GetValues(typeof(InputActionType)))
-                    {
-                        GA.Input._menuInputContainer[new InputType(ActionConditionContainer[new ActionUpdateMode(inputActionType, UpdateMode.Update)], inputActionType, UpdateMode.Update)]?.Invoke();
-                    }
-                    break;
-                case InputModeType.Other:
-                    foreach (InputActionType inputActionType in Enum.GetValues(typeof(InputActionType)))
-                    {
-                        GA.Input._otherInputContainer[new InputType(ActionConditionContainer[new ActionUpdateMode(inputActionType, UpdateMode.Update)], inputActionType, UpdateMode.Update)]?.Invoke();
-                    }
-                    break;
-                default:
-                    break;
+                if(value == ExecuteType.Enter)
+                    StartCoroutine(ChangeMode(key.Item1));
             }
         }
         void FixedUpdate()
         {
+            GA.Input.MoveCallback?.Invoke(_moveDir);      
+        }
+        // Unityの各Updateフレームを待ったら次の状態に遷移したい。
+        void InvokeCallBack(ExecuteType executeType ,InputActionType inputActionType , UpdateMode updateMode)
+        {
+            var inputType = new InputType(executeType,inputActionType,updateMode);
             switch (GA.Input._mode)
             {
                 case InputModeType.InGame:
-                    foreach (InputActionType inputActionType in Enum.GetValues(typeof(InputActionType)))
-                    {
-                        GA.Input._inGameInputContainer[new InputType(ActionConditionContainer[new ActionUpdateMode(inputActionType, UpdateMode.FixedUpdate)], inputActionType, UpdateMode.FixedUpdate)]?.Invoke();
-                    }
+                    if (GA.Input._inGameInputContainer.ContainsKey(inputType))
+                        GA.Input._inGameInputContainer[inputType]?.Invoke();
                     break;
                 case InputModeType.Menu:
-                    foreach (InputActionType inputActionType in Enum.GetValues(typeof(InputActionType)))
-                    {
-                        GA.Input._menuInputContainer[new InputType(ActionConditionContainer[new ActionUpdateMode(inputActionType, UpdateMode.FixedUpdate)], inputActionType, UpdateMode.FixedUpdate)]?.Invoke();
-                    }
+                    if (GA.Input._menuInputContainer.ContainsKey(inputType))
+                        GA.Input._menuInputContainer[inputType]?.Invoke();
                     break;
                 case InputModeType.Other:
-                    foreach (InputActionType inputActionType in Enum.GetValues(typeof(InputActionType)))
-                    {
-                        GA.Input._otherInputContainer[new InputType(ActionConditionContainer[new ActionUpdateMode(inputActionType, UpdateMode.FixedUpdate)], inputActionType, UpdateMode.FixedUpdate)]?.Invoke();
-                    }
+                    if (GA.Input._otherInputContainer.ContainsKey(inputType))
+                        GA.Input._otherInputContainer[inputType]?.Invoke();
                     break;
                 default:
                     break;
             }
         }
-        // Unityの各Updateフレームを待ったら次の状態に遷移したい。
-        IEnumerator ChangeMode(ActionUpdateMode key, ExecuteType executeType)
+        IEnumerator ChangeMode(ActionUpdateMode key)
+        {
+            while (true)
+            {
+                switch (ActionConditionContainer[key])
+                {
+                    case ExecuteType.Enter:
+                        yield return WaitUpdateFrame(key);
+                        ActionConditionContainer[key] = ExecuteType.Performed;
+                        break;
+                    case ExecuteType.Exit:
+                        yield return WaitUpdateFrame(key);
+                        ActionConditionContainer[key] = ExecuteType.Waiting;
+                        yield break;
+                    default:
+                        yield return WaitUpdateFrame(key);
+                        break;
+                }
+            }
+        }
+        IEnumerator WaitUpdateFrame(ActionUpdateMode key)
         {
             switch (key.UpdateMode)
             {
                 case UpdateMode.Update:
+                    InvokeCallBack(ActionConditionContainer[key], key.InputActionType, UpdateMode.Update);
                     yield return new WaitForEndOfFrame();
                     break;
                 case UpdateMode.FixedUpdate:
+                    InvokeCallBack(ActionConditionContainer[key], key.InputActionType, UpdateMode.FixedUpdate);
                     yield return new WaitForFixedUpdate();
-                    break;
-                default:
-                    break;
-            }
-            switch (executeType)
-            {
-                case ExecuteType.Enter:
-                    executeType = ExecuteType.Performed;
-                    ActionConditionContainer[key] = executeType;
-                    break;
-                case ExecuteType.Exit:
-                    executeType = ExecuteType.Waiting;
-                    ActionConditionContainer[key] = executeType;
                     break;
                 default:
                     break;
             }
         }
     }
-    static MyConditioner _mc;
+    static MyInputUpdator _mr;
     //各コンテナ収容用
     Dictionary<InputType, Action> _inGameInputContainer = new();
     Dictionary<InputType, Action> _menuInputContainer = new();
     Dictionary<InputType, Action> _otherInputContainer = new();
-    Dictionary<ActionUpdateMode, ExecuteType> @ActionConditionContainer => _mc.ActionConditionContainer;
-    public bool GetKeyDown(InputActionType inputActionType, UpdateMode updateMode)
-        => ActionConditionContainer[new ActionUpdateMode(inputActionType, updateMode)] == ExecuteType.Enter;
-    public bool GetKey(InputActionType inputActionType, UpdateMode updateMode) 
-        => ActionConditionContainer[new ActionUpdateMode(inputActionType, updateMode)] == ExecuteType.Performed;
-    public bool GetKeyUp(InputActionType inputActionType, UpdateMode updateMode)
-        => ActionConditionContainer[new ActionUpdateMode(inputActionType, updateMode)] == ExecuteType.Exit;
+    Dictionary<ActionUpdateMode, ExecuteType> @ActionConditionContainer => _mr.ActionConditionContainer;
     /// <summary> コンストラクタ </summary>
     public InputProvider() => Initialize();
      InputController _controller = default;
@@ -182,12 +162,12 @@ public class InputProvider
     void Initialize()
     {
         var obj = new GameObject("PlayerInput");
-        _mc = obj.AddComponent<MyConditioner>();
+        _mr = obj.AddComponent<MyInputUpdator>();
         _controller = new InputController();
         _controller.Enable();
         InitializeContainer();
-        _controller.Player.Move.performed += context => { MoveCallback?.Invoke(context.ReadValue<Vector2>()); };
-        _controller.Player.Move.canceled += context => MoveCallback?.Invoke(Vector2.zero);
+        _controller.Player.Move.performed += context =>  _moveDir = context.ReadValue<Vector2>();
+        _controller.Player.Move.canceled += context => { _moveDir = Vector2.zero; MoveCallback?.Invoke(Vector2.zero); };
         _controller.Player.Look.performed += context => MouseCallback?.Invoke(context.ReadValue<Vector2>());
         _controller.Player.Look.canceled += context => MouseCallback?.Invoke(Vector2.zero);
         _controller.Player.Jump.performed += context => CheckContainer(_mode, ExecuteType.Enter, InputActionType.Jump);
@@ -202,12 +182,6 @@ public class InputProvider
         {
             foreach (UpdateMode updateMode in Enum.GetValues(typeof(UpdateMode)))
             {
-                foreach (ExecuteType executeType in Enum.GetValues(typeof(ExecuteType)))
-                {
-                    _inGameInputContainer.Add(new InputType(executeType, inputActionType ,updateMode), null);
-                    _menuInputContainer.Add(new InputType(executeType, inputActionType, updateMode), null);
-                    _otherInputContainer.Add(new InputType(executeType, inputActionType, updateMode), null);
-                }
                 ActionConditionContainer.Add(new ActionUpdateMode(inputActionType, updateMode), ExecuteType.Waiting);
             }
         }
@@ -215,9 +189,8 @@ public class InputProvider
     /// <summary>コンテナに登録されたコールバックの呼び出し/// </summary>
     void CheckContainer(InputModeType mode, ExecuteType excuteType, InputActionType inputActionType)
     {
-
-        _mc[(new ActionUpdateMode(inputActionType, UpdateMode.Update),mode)] = excuteType;
-        _mc[(new ActionUpdateMode(inputActionType, UpdateMode.FixedUpdate), mode)] = excuteType;
+        _mr[(new ActionUpdateMode(inputActionType, UpdateMode.Update),mode)] = excuteType;
+        _mr[(new ActionUpdateMode(inputActionType, UpdateMode.FixedUpdate), mode)] = excuteType;
     }
 }
 
@@ -287,6 +260,11 @@ namespace MyInput
         {
             _excuteType = excuteType;
             _actionUpdateMode = new ActionUpdateMode(inputActionType , update);
+        }
+        public InputType(ExecuteType excuteType, ActionUpdateMode actionUpdateMode)
+        {
+            _excuteType = excuteType;
+            _actionUpdateMode = actionUpdateMode;
         }
     }
     

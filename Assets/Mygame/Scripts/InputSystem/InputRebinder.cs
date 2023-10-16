@@ -8,7 +8,7 @@ public static class InputRebinder
 {
     static InputActionRebindingExtensions.RebindingOperation _rebindOperation = null;
     public static string FindKeyName(string actionName) => 
-        GA.Input.Controller.FindAction(actionName).GetBindingDisplayString();
+        GA.Input.Controller.FindAction(actionName).GetBindingDisplayString(InputBinding.DisplayStringOptions.DontIncludeInteractions);
     public static int GetKeyBindIndex(string actionName) =>
         GA.Input.Controller.FindAction(actionName).GetBindingIndex();
 
