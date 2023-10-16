@@ -64,12 +64,11 @@ public class MoveController : MonoBehaviour
 
     private void OnEnable()
     {
-        _myJumpEnterInputter = new(InputModeType.InGame, InputActionType.Jump, ExecuteType.Enter, JumpStart);
-        _myJumpExitInputter = new(InputModeType.InGame, InputActionType.Jump, ExecuteType.Exit, JumpEnd);
-        _myArrowFireEnterInputter = new(InputModeType.InGame, InputActionType.Fire1, ExecuteType.Enter, ArrowFireStart);
-        _myArrowFireExitInputter = new(InputModeType.InGame, InputActionType.Fire1, ExecuteType.Exit, ArrowFireEnd);
-
-        GA.Input.MoveCallback.AddListener(MovePlayer);
+        _myJumpEnterInputter = new(InputModeType.InGame, InputActionType.Jump, ExecuteType.Enter, UpdateMode.Update,JumpStart);
+        _myJumpExitInputter = new(InputModeType.InGame, InputActionType.Jump, ExecuteType.Exit, UpdateMode.Update, JumpEnd);
+        _myArrowFireEnterInputter = new(InputModeType.InGame, InputActionType.Fire1, ExecuteType.Enter, UpdateMode.Update, ArrowFireStart);
+        _myArrowFireExitInputter = new(InputModeType.InGame, InputActionType.Fire1, ExecuteType.Exit, UpdateMode.Update, ArrowFireEnd);
+        //GA.Input.MoveCallback.AddListener(MovePlayer);
         GA.Input.Regist(_myJumpEnterInputter);
         GA.Input.Regist(_myJumpExitInputter);
         GA.Input.Regist(_myArrowFireEnterInputter);
@@ -78,7 +77,7 @@ public class MoveController : MonoBehaviour
     }
     private void OnDisable()
     {
-        GA.Input.MoveCallback.RemoveListener(MovePlayer);
+        //GA.Input.MoveCallback.RemoveListener(MovePlayer);
         GA.Input.UnRegist(_myJumpEnterInputter);
         GA.Input.UnRegist(_myJumpExitInputter);
         GA.Input.UnRegist(_myArrowFireEnterInputter);
@@ -203,10 +202,6 @@ public class MoveController : MonoBehaviour
 
     void FixedUpdate()
     {
-        //if (GA.Input.ActionConditionContainer[new ActionUpdateMode(InputActionType.Jump, UpdateMode.FixedUpdate)] == ExecuteType.Enter)
-        //{
-        //    print("FixedUpdate : Jumpボタンが押されました");
-        //}
         var moveVec2 = UseInputGravity(_inputVec);
         _inputHorizonal = moveVec2.x;
         _inputVertical = moveVec2.y;

@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
 using MyInput;
-using Cysharp.Threading.Tasks;
 
 public static partial class GA
 {
@@ -14,8 +13,11 @@ public static partial class GA
 
 public class InputProvider
 {
-    private Vector2 _moveDir = Vector2.zero;
-    /// <summary> 移動入力コールバック登録用 </summary>
+    private static Vector2 _moveDir = Vector2.zero;
+    /// <summary> 移動入力監視用 </summary>
+    public static Vector2 MoveDir => _moveDir;
+    ////キーボード入力の場合入力変化がないため1度しか呼ばれないので、MoveDirを監視してもらう。
+    ///// <summary> 移動入力コールバック登録用 </summary>
     public UnityEvent<Vector2> MoveCallback = new();
     /// <summary> マウス入力コールバック登録用 </summary>
     public UnityEvent<Vector2> MouseCallback = new();
@@ -66,13 +68,68 @@ public class InputProvider
         }
         /// <summary> その他入力コールバック登録用コンテナ </summary>
         public Dictionary<ActionUpdateMode, ExecuteType> ActionConditionContainer = new();
-        public ExecuteType this[ActionUpdateMode key]
+        public ExecuteType this[(ActionUpdateMode , InputModeType) key]
         {
-            get { return ActionConditionContainer[key]; }
+            get 
+            { 
+                return ActionConditionContainer[key.Item1]; 
+            }
             set
             {
-                ActionConditionContainer[key] = value;
-                StartCoroutine( ChangeMode(key, value));
+                ActionConditionContainer[key.Item1] = value;
+                StartCoroutine( ChangeMode(key.Item1, value));
+            }
+        }
+        void Update()
+        {
+            switch (GA.Input._mode)
+            {
+                case InputModeType.InGame:
+                    foreach (InputActionType inputActionType in Enum.GetValues(typeof(InputActionType)))
+                    {
+                        GA.Input._inGameInputContainer[new InputType(ActionConditionContainer[new ActionUpdateMode(inputActionType, UpdateMode.Update)], inputActionType , UpdateMode.Update)]?.Invoke();
+                    }
+                    break;
+                case InputModeType.Menu:
+                    foreach (InputActionType inputActionType in Enum.GetValues(typeof(InputActionType)))
+                    {
+                        GA.Input._menuInputContainer[new InputType(ActionConditionContainer[new ActionUpdateMode(inputActionType, UpdateMode.Update)], inputActionType, UpdateMode.Update)]?.Invoke();
+                    }
+                    break;
+                case InputModeType.Other:
+                    foreach (InputActionType inputActionType in Enum.GetValues(typeof(InputActionType)))
+                    {
+                        GA.Input._otherInputContainer[new InputType(ActionConditionContainer[new ActionUpdateMode(inputActionType, UpdateMode.Update)], inputActionType, UpdateMode.Update)]?.Invoke();
+                    }
+                    break;
+                default:
+                    break;
+            }
+        }
+        void FixedUpdate()
+        {
+            switch (GA.Input._mode)
+            {
+                case InputModeType.InGame:
+                    foreach (InputActionType inputActionType in Enum.GetValues(typeof(InputActionType)))
+                    {
+                        GA.Input._inGameInputContainer[new InputType(ActionConditionContainer[new ActionUpdateMode(inputActionType, UpdateMode.FixedUpdate)], inputActionType, UpdateMode.FixedUpdate)]?.Invoke();
+                    }
+                    break;
+                case InputModeType.Menu:
+                    foreach (InputActionType inputActionType in Enum.GetValues(typeof(InputActionType)))
+                    {
+                        GA.Input._menuInputContainer[new InputType(ActionConditionContainer[new ActionUpdateMode(inputActionType, UpdateMode.FixedUpdate)], inputActionType, UpdateMode.FixedUpdate)]?.Invoke();
+                    }
+                    break;
+                case InputModeType.Other:
+                    foreach (InputActionType inputActionType in Enum.GetValues(typeof(InputActionType)))
+                    {
+                        GA.Input._otherInputContainer[new InputType(ActionConditionContainer[new ActionUpdateMode(inputActionType, UpdateMode.FixedUpdate)], inputActionType, UpdateMode.FixedUpdate)]?.Invoke();
+                    }
+                    break;
+                default:
+                    break;
             }
         }
         // Unityの各Updateフレームを待ったら次の状態に遷移したい。
@@ -143,14 +200,14 @@ public class InputProvider
     {
         foreach (InputActionType inputActionType in Enum.GetValues(typeof(InputActionType)))
         {
-            foreach (ExecuteType executeType in Enum.GetValues(typeof(ExecuteType)))
-            {
-                _inGameInputContainer.Add(new InputType(executeType, inputActionType), null);
-                _menuInputContainer.Add(new InputType(executeType, inputActionType), null);
-                _otherInputContainer.Add(new InputType(executeType, inputActionType), null);
-            }
             foreach (UpdateMode updateMode in Enum.GetValues(typeof(UpdateMode)))
             {
+                foreach (ExecuteType executeType in Enum.GetValues(typeof(ExecuteType)))
+                {
+                    _inGameInputContainer.Add(new InputType(executeType, inputActionType ,updateMode), null);
+                    _menuInputContainer.Add(new InputType(executeType, inputActionType, updateMode), null);
+                    _otherInputContainer.Add(new InputType(executeType, inputActionType, updateMode), null);
+                }
                 ActionConditionContainer.Add(new ActionUpdateMode(inputActionType, updateMode), ExecuteType.Waiting);
             }
         }
@@ -158,22 +215,9 @@ public class InputProvider
     /// <summary>コンテナに登録されたコールバックの呼び出し/// </summary>
     void CheckContainer(InputModeType mode, ExecuteType excuteType, InputActionType inputActionType)
     {
-        switch (mode)
-        {
-            case InputModeType.InGame:
-                _inGameInputContainer[new InputType(excuteType, inputActionType)]?.Invoke();
-                break;
-            case InputModeType.Menu:
-                _menuInputContainer[new InputType(excuteType, inputActionType)]?.Invoke();
-                break;
-            case InputModeType.Other:
-                _otherInputContainer[new InputType(excuteType, inputActionType)]?.Invoke();
-                break;
-            default:
-                break;
-        }
-        _mc[new ActionUpdateMode(inputActionType, UpdateMode.Update)] = excuteType;
-        _mc[new ActionUpdateMode(inputActionType, UpdateMode.FixedUpdate)] = excuteType;
+
+        _mc[(new ActionUpdateMode(inputActionType, UpdateMode.Update),mode)] = excuteType;
+        _mc[(new ActionUpdateMode(inputActionType, UpdateMode.FixedUpdate), mode)] = excuteType;
     }
 }
 
@@ -236,13 +280,13 @@ namespace MyInput
     public struct InputType
     {
         private ExecuteType _excuteType;
-        private InputActionType _inputActionType;
+        private ActionUpdateMode _actionUpdateMode;
         public ExecuteType ExecuteType => _excuteType;
-        public InputActionType InputActionType => _inputActionType;
-        public InputType(ExecuteType excuteType, InputActionType inputActionType)
+        public ActionUpdateMode ActionUpdateMode => _actionUpdateMode;
+        public InputType(ExecuteType excuteType, InputActionType inputActionType , UpdateMode update)
         {
             _excuteType = excuteType;
-            _inputActionType = inputActionType;
+            _actionUpdateMode = new ActionUpdateMode(inputActionType , update);
         }
     }
     
@@ -273,10 +317,10 @@ namespace MyInput
             _inputType = inputType;
             _action = action;
         }
-        public Inputter(InputModeType mode, InputActionType inputActionType, ExecuteType excuteType, Action action)
+        public Inputter(InputModeType mode, InputActionType inputActionType, ExecuteType excuteType, UpdateMode updateMode, Action action)
         {
             _mode = mode;
-            _inputType = new InputType(excuteType, inputActionType);
+            _inputType = new InputType(excuteType, inputActionType, updateMode);
             _action = action;
         }
     }
