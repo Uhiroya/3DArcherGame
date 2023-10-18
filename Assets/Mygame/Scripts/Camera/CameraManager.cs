@@ -3,7 +3,7 @@ using JetBrains.Annotations;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-
+using MyInput;
 public class CameraManager : MonoBehaviour
 {
     static CameraManager instance;
@@ -15,17 +15,23 @@ public class CameraManager : MonoBehaviour
     [SerializeField] GameObject _optionImage ;
     public static MyTPSCamera.CameraMode _nowCameraMode ;
     private bool _IsOption = false;
+    List<Inputter> getInputCallBack = new();
+    List<Inputter> menuInputCallBack = new();
+
     private void Awake()
     {
-        //if (instance == null)
-        //{
-        //    instance = this;
-        //    DontDestroyOnLoad(gameObject);
-        //}
-        //else
-        //{
-        //    Destroy(gameObject);
-        //}
+        getInputCallBack.Add(new(InputModeType.InGame, InputActionType.Zoom, ExecuteType.Enter, UpdateMode.Update, ZoomStart));
+        getInputCallBack.Add(new(InputModeType.InGame, InputActionType.Zoom, ExecuteType.Exit, UpdateMode.Update, ZoomEnd));
+        getInputCallBack.Add(new(InputModeType.InGame, InputActionType.Cancel, ExecuteType.Enter, UpdateMode.Update, GetCancel));
+        menuInputCallBack.Add(new(InputModeType.Menu, InputActionType.Cancel, ExecuteType.Enter, UpdateMode.Update, GetCancel));
+    }
+    void OnEnable()
+    {
+        GA.Input.Regist(getInputCallBack);
+    }
+    private void OnDisable()
+    {
+        GA.Input.UnRegist(getInputCallBack);
     }
     void Start()
     {
@@ -36,6 +42,8 @@ public class CameraManager : MonoBehaviour
     public void OpenSetting()
     {
         _IsOption = true;
+        GA.Input.Regist(menuInputCallBack);
+        GA.Input.ModeChange(InputModeType.Menu);
         _optionImage.SetActive(true);
         Cursor.visible = true;
         Cursor.lockState = CursorLockMode.None;
@@ -43,41 +51,40 @@ public class CameraManager : MonoBehaviour
     public void CloseSetting()
     {
         _IsOption = false;
+        GA.Input.UnRegist(menuInputCallBack);
+        GA.Input.ModeChange(InputModeType.InGame);
         _optionImage.SetActive(false);
         Cursor.visible = false;
         Cursor.lockState = CursorLockMode.Locked;
     }
     // Update is called once per frame
-    void Update()
+    void ZoomStart()
+    {            
+        FreeLookCamera.SetActive(false);
+        TPSCamera.SetActive(true);
+        _targetImage.SetActive(true);
+        _nowCameraMode = TPSCamera.GetComponent<MyTPSCamera>()._cameraMode;
+        Cursor.visible = false;
+        Cursor.lockState = CursorLockMode.Locked;
+    }
+    void ZoomEnd()
     {
-        if (Input.GetMouseButtonDown(1))
+        FreeLookCamera.SetActive(true);
+        TPSCamera.SetActive(false);
+        _targetImage.SetActive(false);
+        _nowCameraMode = FreeLookCamera.GetComponent<MyTPSCamera>()._cameraMode;
+        Cursor.visible = false;
+        Cursor.lockState = CursorLockMode.Locked;
+    }
+    void GetCancel()
+    {
+        if (!_IsOption)
         {
-            FreeLookCamera.SetActive(false);
-            TPSCamera.SetActive(true);
-            _targetImage.SetActive(true);
-            _nowCameraMode = TPSCamera.GetComponent<MyTPSCamera>()._cameraMode;
-            Cursor.visible = false;
-            Cursor.lockState = CursorLockMode.Locked;
+            OpenSetting();
         }
-        if (Input.GetMouseButtonUp(1))
+        else
         {
-            FreeLookCamera.SetActive(true);
-            TPSCamera.SetActive(false);
-            _targetImage.SetActive(false);
-            _nowCameraMode = FreeLookCamera.GetComponent<MyTPSCamera>()._cameraMode;
-            Cursor.visible = false;
-            Cursor.lockState = CursorLockMode.Locked;
-        }
-        if(Input.GetKeyDown(KeyCode.Escape))
-        {
-            if (!_IsOption)
-            {
-                OpenSetting();
-            }
-            else
-            {
-                CloseSetting();
-            }
+            CloseSetting();
         }
     }
 }

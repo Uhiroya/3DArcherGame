@@ -5,6 +5,7 @@ using UnityEngine.Animations;
 using DG.Tweening;
 //using UnityEngine.InputSystem;
 using MyInput;
+using System.Collections.Generic;
 
 
 // 必要なコンポーネントの列記
@@ -19,8 +20,7 @@ public class MoveController : MonoBehaviour
     [SerializeField] float _sidewardSpeed = 4.0f;
     [SerializeField] float _rotateSpeed = 2.0f;
     [SerializeField] float _jumpPower = 3.0f;
-    [SerializeField] float minInputValue;
-    [SerializeField] float inputGravity;
+    [SerializeField] float inputGravity = 1f;
     public AnimatorStateInfo CurrentBaseState;
     public AnimatorStateInfo ArrowState;
     float _animMotionDrag = 1f;
@@ -55,57 +55,44 @@ public class MoveController : MonoBehaviour
         _anim = GetComponent<Animator>();
         _rb = GetComponent<Rigidbody>();
     }
+    List<Inputter> InGameInput = new();
     Inputter _myJumpEnterInputter;
     Inputter _myJumpExitInputter;
     Inputter _myArrowFireEnterInputter;
     Inputter _myArrowFireExitInputter;
-    Inputter _debugPrinter;
-    Inputter _debugPrinter1;
-    Inputter _debugPrinter2;
+    //Inputter _debugPrinter;
+    //Inputter _debugPrinter1;
+    //Inputter _debugPrinter2;
 
     private void OnEnable()
     {
-        _myJumpEnterInputter = new(InputModeType.InGame, InputActionType.Jump, ExecuteType.Enter, UpdateMode.Update,JumpStart);
-        _myJumpExitInputter = new(InputModeType.InGame, InputActionType.Jump, ExecuteType.Exit, UpdateMode.Update, JumpEnd);
-        _myArrowFireEnterInputter = new(InputModeType.InGame, InputActionType.Fire1, ExecuteType.Enter, UpdateMode.Update, ArrowFireStart);
-
-        _myArrowFireExitInputter = new(InputModeType.InGame, InputActionType.Fire1, ExecuteType.Exit, UpdateMode.Update, ArrowFireEnd);
-        _debugPrinter = new(InputModeType.InGame, InputActionType.Jump, ExecuteType.Enter, UpdateMode.Update,()=> Debug.Log("Jumpはじめ"));
-        _debugPrinter1 = new(InputModeType.InGame, InputActionType.Jump, ExecuteType.Performed, UpdateMode.FixedUpdate,()=> Debug.Log("Jump中！！！"));
-        _debugPrinter2 = new(InputModeType.InGame, InputActionType.Jump, ExecuteType.Exit, UpdateMode.Update,()=> Debug.Log("Jumpおわり！！！"));
-        GA.Input.MoveCallback.AddListener(MovePlayer);
-        GA.Input.Regist(_myJumpEnterInputter);
-        GA.Input.Regist(_myJumpExitInputter);
-        GA.Input.Regist(_myArrowFireEnterInputter);
-        GA.Input.Regist(_myArrowFireExitInputter);
-        GA.Input.Regist(_debugPrinter);
-        GA.Input.Regist(_debugPrinter1);
-        GA.Input.Regist(_debugPrinter2);
+        InGameInput .Add(new(InputModeType.InGame, InputActionType.Jump, ExecuteType.Enter, UpdateMode.Update,JumpStart));
+        InGameInput .Add(new(InputModeType.InGame, InputActionType.Jump, ExecuteType.Exit, UpdateMode.Update, JumpEnd));
+        InGameInput .Add(new(InputModeType.InGame, InputActionType.Fire1, ExecuteType.Enter, UpdateMode.Update, ArrowFireStart));
+        InGameInput .Add(new(InputModeType.InGame, InputActionType.Fire1, ExecuteType.Exit, UpdateMode.Update, ArrowFireEnd));
+        GA.Input.MoveFixedCallback.AddListener(MovePlayer);
+        GA.Input.MoveCallback.AddListener(AnimationUpdate);
+        GA.Input.Regist(InGameInput);
+        //_debugPrinter = new(InputModeType.InGame, InputActionType.Jump, ExecuteType.Enter, UpdateMode.Update, () => Debug.Log("Jumpはじめ"));
+        //_debugPrinter1 = new(InputModeType.InGame, InputActionType.Jump, ExecuteType.Performed, UpdateMode.FixedUpdate, () => Debug.Log("Jump中！！！"));
+        //_debugPrinter2 = new(InputModeType.InGame, InputActionType.Jump, ExecuteType.Exit, UpdateMode.Update, () => Debug.Log("Jumpおわり！！！"));
+        //GA.Input.Regist(_debugPrinter);
+        //GA.Input.Regist(_debugPrinter1);
+        //GA.Input.Regist(_debugPrinter2);
 
     }
     private void OnDisable()
     {
         GA.Input.MoveCallback.RemoveListener(MovePlayer);
-        GA.Input.UnRegist(_myJumpEnterInputter);
-        GA.Input.UnRegist(_myJumpExitInputter);
-        GA.Input.UnRegist(_myArrowFireEnterInputter);
-        GA.Input.UnRegist(_myArrowFireExitInputter);
-        GA.Input.UnRegist(_debugPrinter);
-        GA.Input.UnRegist(_debugPrinter1);
-        GA.Input.UnRegist(_debugPrinter2);
+        GA.Input.MoveCallback.AddListener(AnimationUpdate);
+        GA.Input.Regist(InGameInput);
+        //GA.Input.UnRegist(_debugPrinter);
+        //GA.Input.UnRegist(_debugPrinter1);
+        //GA.Input.UnRegist(_debugPrinter2);
     }
-    private Vector2 UseInputGravity(Vector2 controlInputValue)
-    {
-        _usegravityInputValue.x = Mathf.MoveTowards(
-            _usegravityInputValue.x, controlInputValue.x, Time.fixedDeltaTime * inputGravity
-        );
-        _usegravityInputValue.y = Mathf.MoveTowards(
-            _usegravityInputValue.y, controlInputValue.y, Time.fixedDeltaTime * inputGravity
-        );
-        return _usegravityInputValue;
-    }
+
     
-    private void Update()
+    void AnimationUpdate(Vector2 dir)
     {
         _anim.SetFloat("velocity_y", _rb.velocity.y);
         if (CameraManager._nowCameraMode == MyTPSCamera.CameraMode.FreeLookMode) //フリーカメラ時のアニメーション制御
@@ -146,7 +133,6 @@ public class MoveController : MonoBehaviour
     }
     void ArrowFireStart()
     {
-        print("ArrowStart");
         _animState = AnimStatePattern.ArrowFire;
         _ac.ArrowChargeStart();
     }
@@ -202,10 +188,20 @@ public class MoveController : MonoBehaviour
 
     }
 
-
+    private Vector2 UseInputGravity(Vector2 controlInputValue)
+    {
+        _usegravityInputValue.x = Mathf.MoveTowards(
+            _usegravityInputValue.x, controlInputValue.x, Time.fixedDeltaTime * inputGravity
+        );
+        _usegravityInputValue.y = Mathf.MoveTowards(
+            _usegravityInputValue.y, controlInputValue.y, Time.fixedDeltaTime * inputGravity
+        );
+        return _usegravityInputValue;
+    }
     void MovePlayer(Vector2 inputVec2) 
     {
         var moveVec2 = UseInputGravity(inputVec2);
+        print(moveVec2);
         _inputHorizonal = moveVec2.x;
         _inputVertical = moveVec2.y;
         float moveRate = ( _inputVertical >= 0 ) ?_forwardSpeed : _backwardSpeed;

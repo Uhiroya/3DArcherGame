@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using System;
+using MyInput;
 
 public class MyTPSCamera : MonoBehaviour
 {
@@ -50,9 +51,13 @@ public class MyTPSCamera : MonoBehaviour
             _offsetObj.name = "CameraTarget";
         }
     }
+    Inputter scroll;
     private void OnEnable()
     {
-        GA.Input.MouseCallback.AddListener(GetInputMouseMove);
+        GA.Input.MouseFixedCallback.AddListener(GetInputMouseMove);
+        GA.Input.MouseFixedCallback.AddListener(GetInputMouseMove);
+        scroll = new Inputter(InputModeType.InGame, InputActionType.Scroll, ExecuteType.Performed, UpdateMode.Update, CameraOffsetUpdate);
+        GA.Input.Regist(scroll);
         //アクティブ時にターゲット対象をカメラ正面に向ける
         var CForward = Camera.main.transform.forward;
         _target.transform.forward = new Vector3(CForward.x, 0f, CForward.z).normalized;
@@ -63,7 +68,9 @@ public class MyTPSCamera : MonoBehaviour
     }
     private void OnDisable()
     {
-        GA.Input.MouseCallback.RemoveListener(GetInputMouseMove);
+        GA.Input.UnRegist(scroll);
+        GA.Input.MouseFixedCallback.RemoveListener(GetInputMouseMove);
+        GA.Input.MouseFixedCallback.RemoveListener(GetInputMouseMove);
         _isInitialized = false;
     }
     IEnumerator StartFollow(Action callback)
@@ -89,17 +96,8 @@ public class MyTPSCamera : MonoBehaviour
     {
         if (_isInitialized)
         {
-            _mouseDir.x = dir.x ;
-            _mouseDir.y = dir.y ;
-        }
-    }
-    Vector2 _mouseDir = Vector2.zero;
-    private void FixedUpdate()
-    {
-        if (_isInitialized)
-        {
-            _rotationX += _mouseDir.x * XSensibility;
-            _rotationY += _mouseDir.y * YSensibility;
+            _rotationX += dir.x * XSensibility;
+            _rotationY += dir.y * YSensibility;
             _rotationY = Mathf.Clamp(_rotationY, -_maxUpAngle, -_minDownAngle);
             if (_cameraMode == CameraMode.TPSMode)
             {
@@ -111,7 +109,7 @@ public class MyTPSCamera : MonoBehaviour
                 //X軸方向の回転を相殺し、カメラ中心方向にキャラクターが向くように微調整。
                 _target.rotation *= Quaternion.Euler(_rotationY, _playerRotationY, 0);
             }
-            else if( _cameraMode == CameraMode.FreeLookMode)
+            else if (_cameraMode == CameraMode.FreeLookMode)
             {
                 //ターゲットの回転制御は行わない
                 _offsetObj.transform.rotation = _preRotation * Quaternion.Euler(-_rotationY, _rotationX, 0f);
@@ -121,14 +119,15 @@ public class MyTPSCamera : MonoBehaviour
             }
         }
     }
-    void Update()
+    void CameraOffsetUpdate()
     {
         if (_cameraMode == CameraMode.FreeLookMode && _isInitialized)
         {
+            print("呼ばれた");
             var scroll = Input.GetAxis("Mouse ScrollWheel");
             if (scroll != 0)
             {
-                _cameraRange +=  _offsetSpeed * -scroll;
+                _cameraRange += _offsetSpeed * -scroll;
                 _cameraRange = Mathf.Clamp(_cameraRange, _minScrollLimit, _maxScrollLimit);
             }
         }
