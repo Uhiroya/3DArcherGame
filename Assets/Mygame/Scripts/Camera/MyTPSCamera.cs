@@ -51,13 +51,15 @@ public class MyTPSCamera : MonoBehaviour
             _offsetObj.name = "CameraTarget";
         }
     }
-    Inputter scroll;
+    Inputter inputLook;
+    Inputter inputScroll;
     private void OnEnable()
     {
-        GA.Input.MouseFixedCallback.AddListener(GetInputMouseMove);
-        GA.Input.MouseFixedCallback.AddListener(GetInputMouseMove);
-        scroll = new Inputter(InputModeType.InGame, InputActionType.Scroll, ExecuteType.Performed, UpdateMode.Update, CameraOffsetUpdate);
-        GA.Input.Regist(scroll);
+        inputLook = new Inputter(InputModeType.InGame, InputActionType.Look, ExecuteType.Always, UpdateMode.FixedUpdate);
+        inputScroll = new Inputter(InputModeType.InGame, InputActionType.Scroll, ExecuteType.Always, UpdateMode.FixedUpdate);
+        GA.Input.Regist(inputLook, GetInputMouseMove);
+        GA.Input.Regist(inputScroll, CameraOffsetUpdate);
+
         //アクティブ時にターゲット対象をカメラ正面に向ける
         var CForward = Camera.main.transform.forward;
         _target.transform.forward = new Vector3(CForward.x, 0f, CForward.z).normalized;
@@ -68,9 +70,8 @@ public class MyTPSCamera : MonoBehaviour
     }
     private void OnDisable()
     {
-        GA.Input.UnRegist(scroll);
-        GA.Input.MouseFixedCallback.RemoveListener(GetInputMouseMove);
-        GA.Input.MouseFixedCallback.RemoveListener(GetInputMouseMove);
+        GA.Input.UnRegist(inputLook, GetInputMouseMove);
+        GA.Input.UnRegist(inputScroll, CameraOffsetUpdate);
         _isInitialized = false;
     }
     IEnumerator StartFollow(Action callback)
@@ -119,12 +120,11 @@ public class MyTPSCamera : MonoBehaviour
             }
         }
     }
-    void CameraOffsetUpdate()
+    void CameraOffsetUpdate(float scroll)
     {
         if (_cameraMode == CameraMode.FreeLookMode && _isInitialized)
         {
-            print("呼ばれた");
-            var scroll = Input.GetAxis("Mouse ScrollWheel");
+            //print(scroll);
             if (scroll != 0)
             {
                 _cameraRange += _offsetSpeed * -scroll;

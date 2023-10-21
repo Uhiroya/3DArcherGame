@@ -4,6 +4,8 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using MyInput;
+using System;
+
 public class CameraManager : MonoBehaviour
 {
     static CameraManager instance;
@@ -15,15 +17,15 @@ public class CameraManager : MonoBehaviour
     [SerializeField] GameObject _optionImage ;
     public static MyTPSCamera.CameraMode _nowCameraMode ;
     private bool _IsOption = false;
-    List<Inputter> getInputCallBack = new();
-    List<Inputter> menuInputCallBack = new();
+    List<(Inputter , Action)> getInputCallBack = new();
+    List<(Inputter, Action)> menuInputCallBack = new();
 
     private void Awake()
     {
-        getInputCallBack.Add(new(InputModeType.InGame, InputActionType.Zoom, ExecuteType.Enter, UpdateMode.Update, ZoomStart));
-        getInputCallBack.Add(new(InputModeType.InGame, InputActionType.Zoom, ExecuteType.Exit, UpdateMode.Update, ZoomEnd));
-        getInputCallBack.Add(new(InputModeType.InGame, InputActionType.Cancel, ExecuteType.Enter, UpdateMode.Update, GetCancel));
-        menuInputCallBack.Add(new(InputModeType.Menu, InputActionType.Cancel, ExecuteType.Enter, UpdateMode.Update, GetCancel));
+        getInputCallBack.Add((new Inputter(InputModeType.InGame, InputActionType.Zoom, ExecuteType.Enter, UpdateMode.Update), ZoomStart));
+        getInputCallBack.Add((new Inputter(InputModeType.InGame, InputActionType.Zoom, ExecuteType.Exit, UpdateMode.Update), ZoomEnd));
+        getInputCallBack.Add((new Inputter(InputModeType.InGame, InputActionType.Cancel, ExecuteType.Enter, UpdateMode.Update), GetCancel));
+        menuInputCallBack.Add((new Inputter(InputModeType.Menu, InputActionType.Cancel, ExecuteType.Enter, UpdateMode.Update), GetCancel));
     }
     void OnEnable()
     {
