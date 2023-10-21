@@ -6,6 +6,7 @@ using DG.Tweening;
 //using UnityEngine.InputSystem;
 using MyInput;
 using System.Collections.Generic;
+using System;
 
 
 // 必要なコンポーネントの列記
@@ -55,24 +56,26 @@ public class MoveController : MonoBehaviour
         _anim = GetComponent<Animator>();
         _rb = GetComponent<Rigidbody>();
     }
-    List<Inputter> InGameInput = new();
-    Inputter _myJumpEnterInputter;
-    Inputter _myJumpExitInputter;
-    Inputter _myArrowFireEnterInputter;
-    Inputter _myArrowFireExitInputter;
+    List<(InputType , Action)> InGameInput = new();
+    InputType _playerInput;
+    InputType _playerAnimationInput;
     //Inputter _debugPrinter;
     //Inputter _debugPrinter1;
     //Inputter _debugPrinter2;
 
     private void OnEnable()
     {
-        InGameInput .Add(new(InputModeType.InGame, InputActionType.Jump, ExecuteType.Enter, UpdateMode.Update,JumpStart));
-        InGameInput .Add(new(InputModeType.InGame, InputActionType.Jump, ExecuteType.Exit, UpdateMode.Update, JumpEnd));
-        InGameInput .Add(new(InputModeType.InGame, InputActionType.Fire1, ExecuteType.Enter, UpdateMode.Update, ArrowFireStart));
-        InGameInput .Add(new(InputModeType.InGame, InputActionType.Fire1, ExecuteType.Exit, UpdateMode.Update, ArrowFireEnd));
-        GA.Input.MoveFixedCallback.AddListener(MovePlayer);
-        GA.Input.MoveCallback.AddListener(AnimationUpdate);
+        InGameInput.Add((new InputType(InputModeType.InGame, InputActionType.Jump, ExecuteType.Enter, UpdateMode.Update),JumpStart));
+        InGameInput.Add((new InputType(InputModeType.InGame, InputActionType.Jump, ExecuteType.Exit, UpdateMode.Update),JumpEnd));
+        InGameInput.Add((new InputType(InputModeType.InGame, InputActionType.Fire1, ExecuteType.Enter, UpdateMode.FixedUpdate),ArrowFireStart));
+        InGameInput.Add((new InputType(InputModeType.InGame, InputActionType.Fire1, ExecuteType.Performed, UpdateMode.FixedUpdate),() => Debug.Log("なう")));
+        InGameInput.Add((new InputType(InputModeType.InGame, InputActionType.Fire1, ExecuteType.Exit, UpdateMode.FixedUpdate),ArrowFireEnd));
         GA.Input.Regist(InGameInput);
+        _playerInput = new InputType(InputModeType.InGame, InputActionType.Move, ExecuteType.Always, UpdateMode.FixedUpdate);
+        _playerAnimationInput = new InputType(InputModeType.InGame, InputActionType.Move, ExecuteType.Always, UpdateMode.Update);
+        GA.Input.Regist(_playerInput, MovePlayer);
+        GA.Input.Regist(_playerAnimationInput, AnimationUpdate);
+        
         //_debugPrinter = new(InputModeType.InGame, InputActionType.Jump, ExecuteType.Enter, UpdateMode.Update, () => Debug.Log("Jumpはじめ"));
         //_debugPrinter1 = new(InputModeType.InGame, InputActionType.Jump, ExecuteType.Performed, UpdateMode.FixedUpdate, () => Debug.Log("Jump中！！！"));
         //_debugPrinter2 = new(InputModeType.InGame, InputActionType.Jump, ExecuteType.Exit, UpdateMode.Update, () => Debug.Log("Jumpおわり！！！"));
@@ -83,9 +86,9 @@ public class MoveController : MonoBehaviour
     }
     private void OnDisable()
     {
-        GA.Input.MoveCallback.RemoveListener(MovePlayer);
-        GA.Input.MoveCallback.AddListener(AnimationUpdate);
-        GA.Input.Regist(InGameInput);
+        GA.Input.UnRegist(InGameInput);
+        GA.Input.UnRegist(_playerInput, MovePlayer);
+        GA.Input.UnRegist(_playerAnimationInput, AnimationUpdate);
         //GA.Input.UnRegist(_debugPrinter);
         //GA.Input.UnRegist(_debugPrinter1);
         //GA.Input.UnRegist(_debugPrinter2);
@@ -133,11 +136,13 @@ public class MoveController : MonoBehaviour
     }
     void ArrowFireStart()
     {
+        print("ArrowStart!!!");
         _animState = AnimStatePattern.ArrowFire;
         _ac.ArrowChargeStart();
     }
     void ArrowFireEnd()
     {
+        print("ArrowEnd!!");
         _ac.ArrowRelease();
         _animState = AnimStatePattern.Idle;
     }
@@ -201,7 +206,7 @@ public class MoveController : MonoBehaviour
     void MovePlayer(Vector2 inputVec2) 
     {
         var moveVec2 = UseInputGravity(inputVec2);
-        print(moveVec2);
+        //print(moveVec2);
         _inputHorizonal = moveVec2.x;
         _inputVertical = moveVec2.y;
         float moveRate = ( _inputVertical >= 0 ) ?_forwardSpeed : _backwardSpeed;
