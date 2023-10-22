@@ -26,7 +26,7 @@ public class InputProvider
     {
         if (!_actionConditionContainer.ContainsKey(inputter.InputType))
         {
-            _actionConditionContainer.Add(inputter.InputType, ExecuteType.Waiting);
+            _actionConditionContainer.Add(inputter.InputType, new MyConditierValue(ExecuteType.Waiting , null));
             return true;
         }
         return false;
@@ -47,10 +47,6 @@ public class InputProvider
         {
             _inputValueContainers.Add(inputter, null);
             _inputValueDic.Add(inputter, 0f);
-            if (inputter.ExecuteType == ExecuteType.Always)
-            {
-                _mir[inputter.InputType] = ExecuteType.Always;
-            }
         }
         _inputValueContainers[inputter] += action;
     }
@@ -60,11 +56,6 @@ public class InputProvider
         {
             _inputVector2Containers.Add(inputter, null);
             _inputVector2Dic.Add(inputter, Vector2.zero);
-            //ExecuteTypeがAlwaysなら起動する
-            if(inputter.ExecuteType == ExecuteType.Always)
-            {
-                _mir[inputter.InputType] = ExecuteType.Always;
-            }
         }
         _inputVector2Containers[inputter] += action;
     }
@@ -106,7 +97,16 @@ public class InputProvider
     }
     /// <summary>入力モード変更/// </summary>
     public void ModeChange(InputModeType inputMode) => _mode = inputMode;
-
+    class MyConditierValue
+    {
+        public ExecuteType ExecuteType;
+        public Coroutine Coroutine;
+        public MyConditierValue(ExecuteType executeType, Coroutine coroutine)
+        {
+            ExecuteType = executeType;
+            Coroutine = coroutine;
+        }
+    }
     private class MyInputUpdator : MonoBehaviour
     {
         private void Awake()
@@ -119,17 +119,17 @@ public class InputProvider
         {
             get
             {
-                return _actionConditionContainer[key];
+                return _actionConditionContainer[key].ExecuteType;
             }
             set
             {
-                //Alwaysは初回のみ起動
-                if (_actionConditionContainer[key] != ExecuteType.Always && value == ExecuteType.Always)
-                    StartCoroutine(InputCallBack(key));
-                _actionConditionContainer[key] = value;
+                ////Alwaysは初回のみ起動
+                //if (_actionConditionContainer[key] != ExecuteType.Always && value == ExecuteType.Always)
+                //    StartCoroutine(InputCallBack(key));
+                _actionConditionContainer[key].ExecuteType = value;
                 //Enterの時のみコルーチンを起動
-                if (value == ExecuteType.Enter)
-                    StartCoroutine(InputCallBack(key));      
+                if (_actionConditionContainer[key].Coroutine == null && (value.HasFlag(ExecuteType.Enter) || value.HasFlag(ExecuteType.Waiting)))
+                    _actionConditionContainer[key].Coroutine =  StartCoroutine(InputCallBack(key));      
             }
         }
         // Unityの各Updateフレームを待ったら次の状態に遷移したい。
@@ -139,28 +139,32 @@ public class InputProvider
             {
                 yield return WaitUpdateFrame(key);
                 
-                switch (_actionConditionContainer[key])
+                switch (_actionConditionContainer[key].ExecuteType)
                 {
                     case ExecuteType.Enter:    
-                        _actionConditionContainer[key] = ExecuteType.Performed;
+                        _actionConditionContainer[key].ExecuteType = ExecuteType.Performed;
                         break;
                     case ExecuteType.Performed:
                         break;
                     case ExecuteType.Exit:
-                        _actionConditionContainer[key] = ExecuteType.Waiting;
-                        yield break;
-                    case ExecuteType.Always:
-                        //print("Always");
-                        Inputter invokker = new Inputter(key, _actionConditionContainer[key]);
-                        //ゲームモードが変わる等参照先がなくなったら除外する
-                        //if (!_inputContainers.ContainsKey(invokker) && !_inputValueContainers.ContainsKey(invokker) && !_inputVector2Containers.ContainsKey(invokker))
-                        //    yield break;
+                        _actionConditionContainer[key].ExecuteType = ExecuteType.Waiting;
                         break;
                     case ExecuteType.Waiting:
-                        yield break;
+                        //コンテナにキーがないときコルーチンを抜ける
+                        Inputter invokker = new Inputter(key, _actionConditionContainer[key].ExecuteType);
+                        if (!_inputContainers.ContainsKey(invokker) &&
+                            !_inputValueContainers.ContainsKey(invokker) &&
+                            !_inputVector2Containers.ContainsKey(invokker))
+                        {
+                            _actionConditionContainer[key].Coroutine = null;
+                            yield break;
+                        }
+                        else
+                            break;
                     default:                      
                         break;
                 }
+
             }
         }
         IEnumerator WaitUpdateFrame(InputType key)
@@ -182,7 +186,7 @@ public class InputProvider
         void InvokeCallBack(InputType key)
         {
             //print(_actionConditionContainer[key]);
-            Inputter invoker = new Inputter(key, _actionConditionContainer[key]);
+            Inputter invoker = new Inputter(key, _actionConditionContainer[key].ExecuteType);
             if (_inputContainers.ContainsKey(invoker))
                 _inputContainers[invoker]?.Invoke();
             if (_inputValueContainers.ContainsKey(invoker))
@@ -192,8 +196,8 @@ public class InputProvider
         }
     }
     static MyInputUpdator _mir;
-    static Dictionary<InputType, ExecuteType> _actionConditionContainer = new();
-    Dictionary<InputType, ExecuteType> ActionConditionContainer => _actionConditionContainer;
+    static Dictionary<InputType, MyConditierValue> _actionConditionContainer = new();
+    Dictionary<InputType, MyConditierValue> ActionConditionContainer => _actionConditionContainer;
     private static Dictionary<Inputter, float> _inputValueDic = new();
     private static Dictionary<Inputter, Vector2> _inputVector2Dic = new();
     static Dictionary<Inputter, Action> _inputContainers = new();
@@ -202,11 +206,11 @@ public class InputProvider
 
     
     public bool GetKeyDown(Inputter inputter)
-    => ActionConditionContainer[inputter.InputType] == ExecuteType.Enter;
+    => ActionConditionContainer[inputter.InputType].ExecuteType == ExecuteType.Enter;
     public bool GetKey(Inputter inputter)
-        => ActionConditionContainer[inputter.InputType] == ExecuteType.Performed;
+        => ActionConditionContainer[inputter.InputType].ExecuteType == ExecuteType.Performed;
     public bool GetKeyUp(Inputter inputter)
-        => ActionConditionContainer[inputter.InputType] == ExecuteType.Exit;
+        => ActionConditionContainer[inputter.InputType].ExecuteType == ExecuteType.Exit;
     /// <summary> コンストラクタ </summary>
     public InputProvider() => Initialize();
      InputController _controller = default;
@@ -221,39 +225,23 @@ public class InputProvider
         _controller = new InputController();
         _controller.Enable();
         //InitializeContainer();
-        _controller.InputMap.Move.performed += context => CheckContainer(ExecuteType.Always, InputActionType.Move ,context.ReadValue<Vector2>());
-        _controller.InputMap.Move.canceled += context => CheckContainer(ExecuteType.Always, InputActionType.Move, Vector2.zero);
-        _controller.InputMap.Look.performed += context => CheckContainer(ExecuteType.Always, InputActionType.Look, context.ReadValue<Vector2>());
-        _controller.InputMap.Look.canceled += context => CheckContainer(ExecuteType.Always, InputActionType.Look, Vector2.zero);
-        _controller.InputMap.Scroll.performed += context => CheckContainer(ExecuteType.Always, InputActionType.Scroll, context.ReadValue<float>());
-        _controller.InputMap.Scroll.canceled += context => CheckContainer(ExecuteType.Always, InputActionType.Scroll, 0f);
-        _controller.InputMap.Jump.performed += context => CheckContainer(ExecuteType.Enter, InputActionType.Jump);
-        _controller.InputMap.Jump.canceled += context => CheckContainer(ExecuteType.Exit, InputActionType.Jump);
-        _controller.InputMap.Fire1.performed += context => CheckContainer(ExecuteType.Enter, InputActionType.Fire1);
-        _controller.InputMap.Fire1.canceled += context => CheckContainer(ExecuteType.Exit, InputActionType.Fire1);
-        _controller.InputMap.Zoom.performed += context => CheckContainer(ExecuteType.Enter, InputActionType.Zoom);
-        _controller.InputMap.Zoom.canceled += context => CheckContainer(ExecuteType.Exit, InputActionType.Zoom);
-        _controller.InputMap.Cancel.performed += context => CheckContainer(ExecuteType.Enter, InputActionType.Cancel);
-        _controller.InputMap.Cancel.canceled += context => CheckContainer(ExecuteType.Exit, InputActionType.Cancel);
+        _controller.InputMap.Move.performed += context => CheckContainer(ExecuteType.Enter, ActionType.Move ,context.ReadValue<Vector2>());
+        _controller.InputMap.Move.canceled += context => CheckContainer(ExecuteType.Exit, ActionType.Move, Vector2.zero);
+        _controller.InputMap.Look.performed += context => CheckContainer(ExecuteType.Enter, ActionType.Look, context.ReadValue<Vector2>());
+        _controller.InputMap.Look.canceled += context => CheckContainer(ExecuteType.Exit, ActionType.Look, Vector2.zero);
+        _controller.InputMap.Scroll.performed += context => CheckContainer(ExecuteType.Enter, ActionType.Scroll, context.ReadValue<float>());
+        _controller.InputMap.Scroll.canceled += context => CheckContainer(ExecuteType.Exit, ActionType.Scroll, 0f);
+        _controller.InputMap.Jump.performed += context => CheckContainer(ExecuteType.Enter, ActionType.Jump);
+        _controller.InputMap.Jump.canceled += context => CheckContainer(ExecuteType.Exit, ActionType.Jump);
+        _controller.InputMap.Fire1.performed += context => CheckContainer(ExecuteType.Enter, ActionType.Fire1);
+        _controller.InputMap.Fire1.canceled += context => CheckContainer(ExecuteType.Exit, ActionType.Fire1);
+        _controller.InputMap.Zoom.performed += context => CheckContainer(ExecuteType.Enter, ActionType.Zoom);
+        _controller.InputMap.Zoom.canceled += context => CheckContainer(ExecuteType.Exit, ActionType.Zoom);
+        _controller.InputMap.Cancel.performed += context => CheckContainer(ExecuteType.Enter, ActionType.Cancel);
+        _controller.InputMap.Cancel.canceled += context => CheckContainer(ExecuteType.Exit, ActionType.Cancel);
     }
-    /// <summary>コンテナの初期化/// </summary>
-    //void InitializeContainer()
-    //{
-    //    foreach (InputModeType inputModeType in Enum.GetValues(typeof(InputModeType)))
-    //    {
-    //        _inputContainers.Add(inputModeType, new Dictionary<InputType, Action>());
-
-    //    }
-    //        foreach (MyInput.InputActionType inputActionType in Enum.GetValues(typeof(MyInput.InputActionType)))
-    //    {
-    //        foreach (UpdateMode updateMode in Enum.GetValues(typeof(UpdateMode)))
-    //        {
-    //            ActionConditionContainer.Add(new ActionUpdateMode(inputActionType, updateMode), ExecuteType.Waiting);
-    //        }
-    //    }
-    //}
     /// <summary>コンテナに登録されたコールバックの呼び出し/// </summary>
-    void CheckContainer( ExecuteType executeType , InputActionType inputActionType)
+    void CheckContainer( ExecuteType executeType , ActionType inputActionType)
     {
         InputType inputType = new InputType(_mode, inputActionType,UpdateMode.Update);
         if (_actionConditionContainer.ContainsKey(inputType))
@@ -266,7 +254,7 @@ public class InputProvider
             _mir[inputType] = executeType;
         }
     }
-    void CheckContainer(ExecuteType executeType, InputActionType inputActionType, float value)
+    void CheckContainer(ExecuteType executeType, ActionType inputActionType, float value)
     {
         Inputter inputter = new Inputter(_mode, inputActionType, executeType, UpdateMode.Update);
         if (_actionConditionContainer.ContainsKey(inputter.InputType))
@@ -281,7 +269,7 @@ public class InputProvider
             _mir[inputter.InputType] = executeType;
         }
     }
-    void CheckContainer(ExecuteType executeType, InputActionType inputActionType, Vector2 value)
+    void CheckContainer(ExecuteType executeType, ActionType inputActionType, Vector2 value)
     {
         Inputter inputter = new Inputter(_mode, inputActionType, executeType, UpdateMode.Update);
         if (_actionConditionContainer.ContainsKey(inputter.InputType))
@@ -312,21 +300,22 @@ namespace MyInput
         Other,
     }
     /// <summary>実行タイプ</summary>
+    [Flags]
     public enum ExecuteType
     {
         /// <summary> 入力時 </summary>
-        Enter,
+        Enter = 1 << 0,
         /// <summary> 入力中 </summary>
-        Performed,
+        Performed = 1 << 1,
         /// <summary> 入力終了時 </summary>
-        Exit,
+        Exit = 1 << 2,
         /// <summary> 入力待ち </summary>
-        Waiting,
+        Waiting = 1 << 3,
         /// <summary> 常に </summary>
-        Always
+        Always = Enter | Performed | Exit  | Waiting,
     }
     /// <summary>入力アクションの種類 </summary>
-    public enum InputActionType
+    public enum ActionType
     {
         ///// <summary> 決定入力 </summary>
         //Submit,
@@ -364,25 +353,29 @@ namespace MyInput
     }
     /// <summary>入力種別</summary>
     /// <param name="mode"></param><param name="executeType"></param><param name="inputActionType"></param></summary>
-    public struct InputType : IEquatable<InputType>
+    public struct InputType 
     {
         private InputModeType _inputModeType;
-        private InputActionType _inputActionType;
+        private ActionType _inputActionType;
         private UpdateMode _updateMode;
         public InputModeType InputModeType => _inputModeType;
-        public InputActionType InputActionType => _inputActionType;
+        public ActionType InputActionType => _inputActionType;
         
         public UpdateMode UpdateMode => _updateMode;
-        public InputType(InputModeType inputModeType ,InputActionType inputActionType ,UpdateMode updateMode)
+        public InputType(InputModeType inputModeType ,ActionType inputActionType ,UpdateMode updateMode)
         {
             _inputModeType = inputModeType;
             _inputActionType = inputActionType;
             _updateMode = updateMode;
         }
-
-        public bool Equals(InputType other)
+        public override int GetHashCode()
         {
-            if(this._inputModeType == other._inputModeType 
+            return _inputModeType.GetHashCode() ^ _inputActionType.GetHashCode() ^ UpdateMode.GetHashCode();   
+        }
+        public override bool Equals(object obj)
+        {
+            if (obj is not InputType other) return false;
+            if (this._inputModeType == other._inputModeType 
                 && this._inputActionType == other._inputActionType 
                 && this._updateMode == other._updateMode )
             {
@@ -391,7 +384,7 @@ namespace MyInput
             return false;
         }
     }
-    public struct Inputter
+    public struct Inputter 
     {
         private InputType _inputType;
         private ExecuteType _executeType;
@@ -403,10 +396,25 @@ namespace MyInput
             _inputType = inputType;
             _executeType = execute;
         }
-        public Inputter(InputModeType inputModeType, InputActionType inputActionType, ExecuteType execute, UpdateMode updateMode)
+        public Inputter(InputModeType inputModeType, ActionType inputActionType, ExecuteType execute, UpdateMode updateMode)
         {
             _inputType = new InputType(inputModeType, inputActionType ,updateMode);
             _executeType = execute;
         }
+
+        public override int GetHashCode()
+        {
+            return InputType.GetHashCode() ^ ExecuteType.GetHashCode();
+        }
+        public override bool Equals(object obj)
+        {
+            if (obj is not Inputter other) return false;
+            if (this.InputType.Equals(other.InputType) && this.ExecuteType.HasFlag(other.ExecuteType))  
+            {
+                return true;
+            }
+            return false;
+        }
     }
+    
 }

@@ -55,8 +55,8 @@ public class MyTPSCamera : MonoBehaviour
     Inputter inputScroll;
     private void OnEnable()
     {
-        inputLook = new Inputter(InputModeType.InGame, InputActionType.Look, ExecuteType.Always, UpdateMode.FixedUpdate);
-        inputScroll = new Inputter(InputModeType.InGame, InputActionType.Scroll, ExecuteType.Always, UpdateMode.FixedUpdate);
+        inputLook = new Inputter(InputModeType.InGame, ActionType.Look, ExecuteType.Always, UpdateMode.FixedUpdate);
+        inputScroll = new Inputter(InputModeType.InGame, ActionType.Scroll, ExecuteType.Always, UpdateMode.FixedUpdate);
         GA.Input.Regist(inputLook, GetInputMouseMove);
         GA.Input.Regist(inputScroll, CameraOffsetUpdate);
 

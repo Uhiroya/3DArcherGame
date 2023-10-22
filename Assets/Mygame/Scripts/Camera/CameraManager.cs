@@ -22,10 +22,10 @@ public class CameraManager : MonoBehaviour
 
     private void Awake()
     {
-        getInputCallBack.Add((new Inputter(InputModeType.InGame, InputActionType.Zoom, ExecuteType.Enter, UpdateMode.Update), ZoomStart));
-        getInputCallBack.Add((new Inputter(InputModeType.InGame, InputActionType.Zoom, ExecuteType.Exit, UpdateMode.Update), ZoomEnd));
-        getInputCallBack.Add((new Inputter(InputModeType.InGame, InputActionType.Cancel, ExecuteType.Enter, UpdateMode.Update), GetCancel));
-        menuInputCallBack.Add((new Inputter(InputModeType.Menu, InputActionType.Cancel, ExecuteType.Enter, UpdateMode.Update), GetCancel));
+        getInputCallBack.Add((new Inputter(InputModeType.InGame, ActionType.Zoom, ExecuteType.Enter, UpdateMode.Update), ZoomStart));
+        getInputCallBack.Add((new Inputter(InputModeType.InGame, ActionType.Zoom, ExecuteType.Exit, UpdateMode.Update), ZoomEnd));
+        getInputCallBack.Add((new Inputter(InputModeType.InGame, ActionType.Cancel, ExecuteType.Enter, UpdateMode.Update), GetCancel));
+        menuInputCallBack.Add((new Inputter(InputModeType.Menu, ActionType.Cancel, ExecuteType.Enter, UpdateMode.Update), GetCancel));
     }
     void OnEnable()
     {
