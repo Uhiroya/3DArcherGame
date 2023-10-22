@@ -10,18 +10,6 @@ public static partial class GA
 }
 public class InputProvider
 {
-
-    //private static Vector2 _moveDir = Vector2.zero;
-    //private static Vector2 _mouseDir = Vector2.zero;
-    //private static float _scrollValue = 0f;
-    /////// <summary> 移動入力コールバック登録用 </summary>
-    //public Action<Vector2> MoveCallback = null;
-    //public Action<Vector2> MoveFixedCallback = null;
-    ///// <summary> 始点入力コールバック登録用 </summary>
-    //public Action<Vector2> LookCallback = null;
-    //public Action<Vector2> LookFixedCallback = null;
-    //public Action<float> LookOffsetCallback = null;
-    //public Action<float> LookOffsetFixedCallback = null;
     public bool IsNotRegisted(Inputter inputter)
     {
         if (!_actionConditionContainer.ContainsKey(inputter.InputType))
@@ -123,9 +111,6 @@ public class InputProvider
             }
             set
             {
-                ////Alwaysは初回のみ起動
-                //if (_actionConditionContainer[key] != ExecuteType.Always && value == ExecuteType.Always)
-                //    StartCoroutine(InputCallBack(key));
                 _actionConditionContainer[key].ExecuteType = value;
                 //Enterの時のみコルーチンを起動
                 if (_actionConditionContainer[key].Coroutine == null && (value.HasFlag(ExecuteType.Enter) || value.HasFlag(ExecuteType.Waiting)))
@@ -224,7 +209,6 @@ public class InputProvider
         _mir = obj.AddComponent<MyInputUpdator>();
         _controller = new InputController();
         _controller.Enable();
-        //InitializeContainer();
         _controller.InputMap.Move.performed += context => CheckContainer(ExecuteType.Enter, ActionType.Move ,context.ReadValue<Vector2>());
         _controller.InputMap.Move.canceled += context => CheckContainer(ExecuteType.Exit, ActionType.Move, Vector2.zero);
         _controller.InputMap.Look.performed += context => CheckContainer(ExecuteType.Enter, ActionType.Look, context.ReadValue<Vector2>());
@@ -313,6 +297,17 @@ namespace MyInput
         Waiting = 1 << 3,
         /// <summary> 常に </summary>
         Always = Enter | Performed | Exit  | Waiting,
+    }
+    public static class ExecuteTypeExtensions
+    {
+        public static bool CustomEquals(this ExecuteType key1, ExecuteType key2)
+        {
+            return (key1 & key2) != 0;
+        }
+        public static int CustomGetHashCode(this ExecuteType value)
+        {
+            return 0;
+        }
     }
     /// <summary>入力アクションの種類 </summary>
     public enum ActionType
@@ -404,12 +399,12 @@ namespace MyInput
 
         public override int GetHashCode()
         {
-            return InputType.GetHashCode() ^ ExecuteType.GetHashCode();
+            return InputType.GetHashCode() ^ ExecuteType.CustomGetHashCode();
         }
         public override bool Equals(object obj)
         {
             if (obj is not Inputter other) return false;
-            if (this.InputType.Equals(other.InputType) && this.ExecuteType.HasFlag(other.ExecuteType))  
+            if (this.InputType.Equals(other.InputType) && this.ExecuteType.CustomEquals(other.ExecuteType))  
             {
                 return true;
             }
