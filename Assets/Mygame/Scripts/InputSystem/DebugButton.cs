@@ -6,10 +6,10 @@ public class DebugButton : MonoBehaviour
 {
     public void ModeChangeToMenu()
     {
-        GA.Input.ModeChange(MyInput.InputModeType.Menu);
+        GA.Input.ModeChange(MyInput.InputMode.Menu);
     }
     public void ModeChangeInGame()
     {
-        GA.Input.ModeChange(MyInput.InputModeType.InGame);
+        GA.Input.ModeChange(MyInput.InputMode.InGame);
     }
 }

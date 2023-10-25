@@ -55,11 +55,10 @@ public class MyTPSCamera : MonoBehaviour
     Inputter inputScroll;
     private void OnEnable()
     {
-        inputLook = new Inputter(InputModeType.InGame, ActionType.Look, ExecuteType.Always, UpdateMode.FixedUpdate);
-        inputScroll = new Inputter(InputModeType.InGame, ActionType.Scroll, ExecuteType.Always, UpdateMode.FixedUpdate);
+        inputLook = new Inputter(InputMode.InGame, ActionType.Look, ExecuteType.Always, UpdateMode.FixedUpdate);
+        inputScroll = new Inputter(InputMode.InGame, ActionType.Scroll, ExecuteType.Always, UpdateMode.FixedUpdate);
         GA.Input.Regist(inputLook, GetInputMouseMove);
         GA.Input.Regist(inputScroll, CameraOffsetUpdate);
-
         //アクティブ時にターゲット対象をカメラ正面に向ける
         var CForward = Camera.main.transform.forward;
         _target.transform.forward = new Vector3(CForward.x, 0f, CForward.z).normalized;

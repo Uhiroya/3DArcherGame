@@ -22,10 +22,10 @@ public class CameraManager : MonoBehaviour
 
     private void Awake()
     {
-        getInputCallBack.Add((new Inputter(InputModeType.InGame, ActionType.Zoom, ExecuteType.Enter, UpdateMode.Update), ZoomStart));
-        getInputCallBack.Add((new Inputter(InputModeType.InGame, ActionType.Zoom, ExecuteType.Exit, UpdateMode.Update), ZoomEnd));
-        getInputCallBack.Add((new Inputter(InputModeType.InGame, ActionType.Cancel, ExecuteType.Enter, UpdateMode.Update), GetCancel));
-        menuInputCallBack.Add((new Inputter(InputModeType.Menu, ActionType.Cancel, ExecuteType.Enter, UpdateMode.Update), GetCancel));
+        getInputCallBack.Add((new Inputter(InputMode.InGame, ActionType.Zoom, ExecuteType.Enter, UpdateMode.Update), ZoomStart));
+        getInputCallBack.Add((new Inputter(InputMode.InGame, ActionType.Zoom, ExecuteType.Exit, UpdateMode.Update), ZoomEnd));
+        getInputCallBack.Add((new Inputter(InputMode.InGame, ActionType.Cancel, ExecuteType.Enter, UpdateMode.Update), GetCancel));
+        menuInputCallBack.Add((new Inputter(InputMode.Menu, ActionType.Cancel, ExecuteType.Enter, UpdateMode.Update), GetCancel));
     }
     void OnEnable()
     {
@@ -45,7 +45,7 @@ public class CameraManager : MonoBehaviour
     {
         _IsOption = true;
         GA.Input.Regist(menuInputCallBack);
-        GA.Input.ModeChange(InputModeType.Menu);
+        GA.Input.ModeChange(InputMode.Menu);
         _optionImage.SetActive(true);
         Cursor.visible = true;
         Cursor.lockState = CursorLockMode.None;
@@ -54,7 +54,7 @@ public class CameraManager : MonoBehaviour
     {
         _IsOption = false;
         GA.Input.UnRegist(menuInputCallBack);
-        GA.Input.ModeChange(InputModeType.InGame);
+        GA.Input.ModeChange(InputMode.InGame);
         _optionImage.SetActive(false);
         Cursor.visible = false;
         Cursor.lockState = CursorLockMode.Locked;

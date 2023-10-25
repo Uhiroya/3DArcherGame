@@ -59,20 +59,17 @@ public class MoveController : MonoBehaviour
     List<(Inputter , Action)> InGameInput = new();
     Inputter _playerInput;
     Inputter _playerAnimationInput;
-    //Inputter _debugPrinter;
-    //Inputter _debugPrinter1;
-    //Inputter _debugPrinter2;
 
     private void OnEnable()
     {
-        InGameInput.Add((new Inputter(InputModeType.InGame, ActionType.Jump, ExecuteType.Enter, UpdateMode.Update),JumpStart));
-        InGameInput.Add((new Inputter(InputModeType.InGame, ActionType.Jump, ExecuteType.Exit, UpdateMode.Update),JumpEnd));
-        InGameInput.Add((new Inputter(InputModeType.InGame, ActionType.Fire1, ExecuteType.Enter, UpdateMode.Update),ArrowFireStart));
-        InGameInput.Add((new Inputter(InputModeType.InGame, ActionType.Fire1, ExecuteType.Performed, UpdateMode.Update),() => Debug.Log("なう")));
-        InGameInput.Add((new Inputter(InputModeType.InGame, ActionType.Fire1, ExecuteType.Exit, UpdateMode.Update),ArrowFireEnd));
+        InGameInput.Add((new Inputter(InputMode.InGame, ActionType.Jump, ExecuteType.Enter, UpdateMode.Update),JumpStart));
+        InGameInput.Add((new Inputter(InputMode.InGame, ActionType.Jump, ExecuteType.Exit, UpdateMode.Update),JumpEnd));
+        InGameInput.Add((new Inputter(InputMode.InGame, ActionType.Fire1, ExecuteType.Enter, UpdateMode.Update),ArrowFireStart));
+        InGameInput.Add((new Inputter(InputMode.InGame, ActionType.Fire1, ExecuteType.Performed, UpdateMode.Update),() => Debug.Log("なう")));
+        InGameInput.Add((new Inputter(InputMode.InGame, ActionType.Fire1, ExecuteType.Exit, UpdateMode.Update),ArrowFireEnd));
         GA.Input.Regist(InGameInput);
-        _playerInput = new Inputter(InputModeType.InGame, ActionType.Move, ExecuteType.Always, UpdateMode.FixedUpdate);
-        _playerAnimationInput = new Inputter(InputModeType.InGame, ActionType.Move, ExecuteType.Always, UpdateMode.Update);
+        _playerInput = new Inputter(InputMode.InGame, ActionType.Move, ExecuteType.Always, UpdateMode.FixedUpdate);
+        _playerAnimationInput = new Inputter(InputMode.InGame, ActionType.Move, ExecuteType.Always, UpdateMode.Update);
         GA.Input.Regist(_playerInput, MovePlayer);
         GA.Input.Regist(_playerAnimationInput, AnimationUpdate);
         
