@@ -51,14 +51,15 @@ public class MyTPSCamera : MonoBehaviour
             _offsetObj.name = "CameraTarget";
         }
     }
-    Inputter inputLook;
-    Inputter inputScroll;
+    InputType _inputLook = new InputType(InputMode.InGame, ActionType.Look, UpdateMode.FixedUpdate);
+    InputType _inputScroll = new InputType(InputMode.InGame, ActionType.Scroll, UpdateMode.FixedUpdate);
+
+    InputToken _inputLookToken;
+    InputToken _inputScrollToken;
     private void OnEnable()
     {
-        inputLook = new Inputter(InputMode.InGame, ActionType.Look, ExecuteType.Always, UpdateMode.FixedUpdate);
-        inputScroll = new Inputter(InputMode.InGame, ActionType.Scroll, ExecuteType.Always, UpdateMode.FixedUpdate);
-        GA.Input.Regist(inputLook, GetInputMouseMove);
-        GA.Input.Regist(inputScroll, CameraOffsetUpdate);
+        _inputLookToken = GA.Input.Regist(_inputLook , ExecuteType.Always , GetInputMouseMove);
+        _inputScrollToken = GA.Input.Regist(_inputScroll, ExecuteType.Always , CameraOffsetUpdate);
         //アクティブ時にターゲット対象をカメラ正面に向ける
         var CForward = Camera.main.transform.forward;
         _target.transform.forward = new Vector3(CForward.x, 0f, CForward.z).normalized;
@@ -69,8 +70,8 @@ public class MyTPSCamera : MonoBehaviour
     }
     private void OnDisable()
     {
-        GA.Input.UnRegist(inputLook, GetInputMouseMove);
-        GA.Input.UnRegist(inputScroll, CameraOffsetUpdate);
+        GA.Input.UnRegist(_inputLookToken);
+        GA.Input.UnRegist(_inputScrollToken);
         _isInitialized = false;
     }
     IEnumerator StartFollow(Action callback)

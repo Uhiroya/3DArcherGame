@@ -13,68 +13,61 @@ public static partial class GA
 public class InputProvider
 {
     ///// <summary>/// ボタン入力コールバック登録用/// </summary>
-    public void Regist(Inputter inputter, Action action)
+    public InputToken Regist(InputType inputType ,ExecuteType execute, Action action)
     {
-        if (IsNotRegisted(inputter) || !_inputContainers.ContainsKey(inputter))
+        Inputter inputter = new Inputter(inputType, execute);
+        if (!_inputContainers.ContainsKey(inputter))
         {
             _inputContainers.Add(inputter, null);
         }
         _inputContainers[inputter] += action;
+        InputToken inputToken = new InputToken(inputter , action);
+        return inputToken;
     }
     /// <summary> CS0121エラーが出る可能性があるので、デリゲートをキャストする必要があるかも</summary>
-    public void Regist(Inputter inputter, Action<float> action)
+    public InputToken Regist(InputType inputType, ExecuteType execute, Action<float> action)
     {
-        if (IsNotRegisted(inputter) || !_inputValueContainers.ContainsKey(inputter))
+        Inputter inputter = new Inputter(inputType, execute);
+        if (!_inputValueContainers.ContainsKey(inputter))
         {
             _inputValueContainers.Add(inputter, null);
-            _inputValueDic.Add(inputter, 0f);
         }
         _inputValueContainers[inputter] += action;
+        InputToken inputToken = new InputToken(inputter, action);
+        return inputToken;
     }
     /// <summary> CS0121エラーが出る可能性があるので、デリゲートをキャストする必要があるかも</summary>
-    public void Regist(Inputter inputter, Action<Vector2> action)
+    public InputToken Regist(InputType inputType, ExecuteType execute, Action<Vector2> action)
     {
-        if (IsNotRegisted(inputter) || !_inputVector2Containers.ContainsKey(inputter))
+        Inputter inputter = new Inputter(inputType, execute);
+        if (!_inputVector2Containers.ContainsKey(inputter))
         {
             _inputVector2Containers.Add(inputter, null);
-            _inputVector2Dic.Add(inputter, Vector2.zero);
         }
         _inputVector2Containers[inputter] += action;
-    }
-    public void Regist(List<(Inputter, Action)> inputterList)
-    {
-        foreach (var inputter in inputterList)
-        {
-            Regist(inputter.Item1, inputter.Item2);
-        }
+        InputToken inputToken = new InputToken(inputter, action);
+        return inputToken;
     }
     /// <summary>/// ボタン入力コールバック登録解除用/// </summary>
-    public void UnRegist(Inputter inputter, Action action)
+    public void UnRegist(InputToken token)
     {
-        if (_inputContainers.ContainsKey(inputter))
+        if(token.Action is Action action)
         {
-            _inputContainers[inputter] -= action;
+            _inputContainers.TryGetValue(token.Inputter, out Action delegete);
+            if (delegete != null) return;
+            delegete -= action;
         }
-    }
-    public void UnRegist(Inputter inputter, Action<float> action)
-    {
-        if (_inputValueContainers.ContainsKey(inputter))
+        else if (token.Action is Action<float> valueAction)
         {
-            _inputValueContainers[inputter] -= action;
+            _inputValueContainers.TryGetValue(token.Inputter, out Action<float> delegete);
+            if (delegete != null) return;
+            delegete -= valueAction;
         }
-    }
-    public void UnRegist(Inputter inputter, Action<Vector2> action)
-    {
-        if (_inputVector2Containers.ContainsKey(inputter))
+        else if (token.Action is Action<Vector2> vec2Action)
         {
-            _inputVector2Containers[inputter] -= action;
-        }
-    }
-    public void UnRegist(List<(Inputter, Action)> inputterList)
-    {
-        foreach (var inputter in inputterList)
-        {
-            UnRegist(inputter.Item1, inputter.Item2);
+            _inputVector2Containers.TryGetValue(token.Inputter, out Action<Vector2> delegete);
+            if (delegete != null) return;
+            delegete -= vec2Action;
         }
     }
     /// <summary>入力モード変更/// </summary>
@@ -83,6 +76,14 @@ public class InputProvider
         _mode = inputMode;
         ResetDicCondition();
     }
+
+    /// <summary>操作の入力状況を返す</summary>
+    public ExecuteType GetKeyCondition(ActionType actionType, UpdateMode updateMode)
+    {
+        InputType inputType = new InputType(_mode, actionType, updateMode);
+        return _mir[inputType];
+    }
+    /// <summary>入力状態をリセットする。</summary>
     void ResetDicCondition()
     {
         _actionConditionContainer.Values.Select(x => x.ExecuteType = ExecuteType.Waiting);
@@ -96,15 +97,7 @@ public class InputProvider
             _inputVector2Dic[item] = Vector2.zero;
         }
     }
-    bool IsNotRegisted(Inputter inputter)
-    {
-        if (!_actionConditionContainer.ContainsKey(inputter.InputType))
-        {
-            _actionConditionContainer.Add(inputter.InputType, new MyConditierValue(ExecuteType.Waiting, null));
-            return true;
-        }
-        return false;
-    }
+
     class MyInputUpdator : MonoBehaviour
     {
         void Awake()
@@ -112,7 +105,6 @@ public class InputProvider
             DontDestroyOnLoad(gameObject);
         }
         //_actionConditionContainerがもともとここで宣言されていたが、外に出したせいでインデクサーとの関係がわかりにくくなった。
-        //インデクサーに名前をつけたかったためここにある...
         public ExecuteType this[InputType key]
         {
             get
@@ -123,18 +115,17 @@ public class InputProvider
             set
             {
                 _actionConditionContainer[key].ExecuteType = value;
-                //Enterの時のみコルーチンを起動
+                //Enterの時または初期化時のみコルーチンを起動
                 if (_actionConditionContainer[key].Coroutine == null && (value.HasFlag(ExecuteType.Enter) || value.HasFlag(ExecuteType.Waiting)))
                     _actionConditionContainer[key].Coroutine = StartCoroutine(InputCallBack(key));
             }
         }
-        // Unityの各Updateフレームを待ったら次の状態に遷移したい。
+        // Unityの各Updateフレームを待ったら次の状態に遷移する。
         IEnumerator InputCallBack(InputType key)
         {
             while (true)
             {
                 yield return WaitUpdateFrame(key);
-
                 switch (_actionConditionContainer[key].ExecuteType)
                 {
                     case ExecuteType.Enter:
@@ -171,19 +162,24 @@ public class InputProvider
         }
         void InvokeCallBack(InputType key)
         {
+            //print($"{key.ActionType}のコルーチンが呼ばれました");
             Inputter invoker = new Inputter(key, _actionConditionContainer[key].ExecuteType);
+            //登録されていないならdefault値が帰ってくる
             _inputContainers.TryGetValue(invoker, out Action action);
-            action?.Invoke();
             _inputValueContainers.TryGetValue(invoker, out Action<float> valueAction);
-            valueAction?.Invoke(_inputValueDic[invoker]);
             _inputVector2Containers.TryGetValue(invoker, out Action<Vector2> vec2Action);
-            vec2Action?.Invoke(_inputVector2Dic[invoker]);
-            if(_actionConditionContainer[key].ExecuteType == ExecuteType.Waiting)
+
+            action?.Invoke();
+            valueAction?.Invoke(_inputValueDic[key]);
+            vec2Action?.Invoke(_inputVector2Dic[key]);
+            //Actionが登録されていないかつキー入力がないときはコルーチンを終了させる。
+            if(ExecuteTypeExtensions.CustomEquals( _actionConditionContainer[key].ExecuteType, ExecuteType.Waiting))
             {
                 if(action == null && valueAction == null && vec2Action == null)
                 {
                     StopCoroutine(_actionConditionContainer[key].Coroutine);
                     _actionConditionContainer[key].Coroutine = null;
+                    //print($"{key.ActionType}のコルーチンが終了しました");
                 }
             }
         }
@@ -201,16 +197,12 @@ public class InputProvider
     }
     /// <summary>　登録された入力の状態を保持するコンテナ </summary>
     static Dictionary<InputType, MyConditierValue> _actionConditionContainer = new();
-    /// <summary>　登録されていないものにアクセスするとNoneが帰ってくる</summary>
-    public ExecuteType GetKeyCondition(InputType inputType)
-    {
-        return _mir[inputType];
-    }
+
     /// <summary> 現在の入力値を保持して返す用の辞書 </summary>
-    static Dictionary<Inputter, float> _inputValueDic = new();
-    public static Dictionary<Inputter, float> InputValueDic => _inputValueDic;
-    static Dictionary<Inputter, Vector2> _inputVector2Dic = new();
-    public static Dictionary<Inputter, Vector2> InputVector2Dic => _inputVector2Dic;
+    static Dictionary<InputType, float> _inputValueDic = new();
+    public static Dictionary<InputType, float> InputValueDic => _inputValueDic;
+    static Dictionary<InputType, Vector2> _inputVector2Dic = new();
+    public static Dictionary<InputType, Vector2> InputVector2Dic => _inputVector2Dic;
     /// <summary> 入力コールバック登録用コンテナ </summary>
     static Dictionary<Inputter, Action> _inputContainers = new();
     static Dictionary<Inputter, Action<float>> _inputValueContainers = new();
@@ -226,6 +218,7 @@ public class InputProvider
     {
         var obj = new GameObject("PlayerInput");
         _mir = obj.AddComponent<MyInputUpdator>();
+        InitializeContainer();
         _controller = new InputController();
         _controller.Enable();
         _controller.InputMap.Move.performed += context => CheckContainer(ExecuteType.Enter, ActionType.Move, context.ReadValue<Vector2>());
@@ -243,78 +236,48 @@ public class InputProvider
         _controller.InputMap.Cancel.performed += context => CheckContainer(ExecuteType.Enter, ActionType.Cancel);
         _controller.InputMap.Cancel.canceled += context => CheckContainer(ExecuteType.Exit, ActionType.Cancel);
     }
-    //利用するInputの順次登録をおこなうと、ContainsKeyやTryGetValueを処理に差し込む必要が出てきてしまうため、
-    //全てのKeyを最初から登録していた方が処理が軽そう。と思ったが、現状の処理だとWaitingが登録されると、
-    //UpdateおよびFixedUpdateのタイミングで更新する処理をしているため、意味のないコルーチンが多く起動される。
-    //    void InitializeContainer()
-    //    {
-    //        foreach (InputMode inputMode in Enum.GetValues(typeof(InputMode)))
-    //        {
-    //            foreach (UpdateMode updateMode in Enum.GetValues(typeof(UpdateMode)))
-    //            {
-    //                foreach (ActionType actionType in Enum.GetValues(typeof(ActionType)))
-    //                {
-    //                    InputType inputType = new InputType(inputMode, actionType, updateMode);
-    //                    _actionConditionContainer.Add(inputType , new MyConditierValue(ExecuteType.Waiting, null));
-    //                    foreach (ExecuteType executeType in Enum.GetValues(typeof(ExecuteType)))
-    //                    {
-    //                        Inputter inputter = new Inputter(inputType ,executeType);
-    //                        _inputContainers.Add(inputter, null);
-    //                    }
-    //                }
-    //                foreach (ActionType actionType in new ActionType[] { ActionType.Scroll })
-    //                {
-    //                    InputType inputType = new InputType(inputMode, actionType, updateMode);
-    //                    _inputVector2Containers.Add()
-    //                }
-    //                foreach (ActionType actionType in new ActionType[]{ ActionType.Move , ActionType.Look})
-    //                {
-    //                    InputType inputType = new InputType(inputMode, actionType, updateMode);
-    //                }
-    //        }           
-    //    }
+    //ConditionContainerの初期登録
+    void InitializeContainer()
+    {
+        foreach (InputMode inputMode in Enum.GetValues(typeof(InputMode)))
+        {
+            foreach (ActionType actionType in Enum.GetValues(typeof(ActionType)))
+            {
+                foreach (UpdateMode updateMode in Enum.GetValues(typeof(UpdateMode)))
+                {
+                    InputType inputType = new InputType(inputMode, actionType, updateMode);
+                    _actionConditionContainer.Add(inputType, new MyConditierValue(ExecuteType.Waiting, null));
+                    _inputValueDic[inputType] = 0f;
+                    _inputVector2Dic[inputType] = Vector2.zero;
+                }
+            }
+        }
+    }
     /// <summary>コンテナに登録されたコールバックの呼び出し/// </summary>
     void CheckContainer(ExecuteType executeType, ActionType actionType)
     {
-        InputType inputType = new InputType(_mode, actionType, UpdateMode.Update);
-        if (_actionConditionContainer.ContainsKey(inputType))
+        foreach (UpdateMode updateMode in Enum.GetValues(typeof(UpdateMode)))
         {
-            _mir[inputType] = executeType;
-        }
-        inputType = new InputType(_mode, actionType, UpdateMode.FixedUpdate);
-        if (_actionConditionContainer.ContainsKey(inputType))
-        {
+            InputType inputType = new InputType(_mode, actionType, updateMode);
             _mir[inputType] = executeType;
         }
     }
     void CheckContainer(ExecuteType executeType, ActionType actionType, float value)
     {
-        Inputter inputter = new Inputter(_mode, actionType, executeType, UpdateMode.Update);
-        if (_actionConditionContainer.ContainsKey(inputter.InputType))
+        foreach (UpdateMode updateMode in Enum.GetValues(typeof(UpdateMode)))
         {
-            _inputValueDic[inputter] = value;
-            _mir[inputter.InputType] = executeType;
-        }
-        inputter = new Inputter(_mode, actionType, executeType, UpdateMode.FixedUpdate);
-        if (_actionConditionContainer.ContainsKey(inputter.InputType))
-        {
-            _inputValueDic[inputter] = value;
-            _mir[inputter.InputType] = executeType;
+            InputType inputType = new InputType(_mode, actionType, updateMode);
+            _inputValueDic[inputType] = value;
+            _mir[inputType] = executeType;
         }
     }
     void CheckContainer(ExecuteType executeType, ActionType actionType, Vector2 value)
     {
-        Inputter inputter = new Inputter(_mode, actionType, executeType, UpdateMode.Update);
-        if (_actionConditionContainer.ContainsKey(inputter.InputType))
+        foreach (UpdateMode updateMode in Enum.GetValues(typeof(UpdateMode)))
         {
-            _inputVector2Dic[inputter] = value;
-            _mir[inputter.InputType] = executeType;
-        }
-        inputter = new Inputter(_mode, actionType, executeType, UpdateMode.FixedUpdate);
-        if (_actionConditionContainer.ContainsKey(inputter.InputType))
-        {
-            _inputVector2Dic[inputter] = value;
-            _mir[inputter.InputType] = executeType;
+            InputType inputType = new InputType(_mode, actionType, updateMode);
+            _inputVector2Dic[inputType] = value;
+            _mir[inputType] = executeType;
         }
     }
 }
@@ -345,7 +308,7 @@ namespace MyInput
         /// <summary> 入力待ち </summary>
         Waiting = 1 << 3,
         /// <summary> 常に </summary>
-        Always = Enter | Performed | Exit  | Waiting,
+        Always = Enter | Performed | Exit | Waiting,
     }
     //列挙型のEqualsと==がオーバーライドできないため、ビットフラグの等価判定には以下を利用する。
     public static class ExecuteTypeExtensions
@@ -393,9 +356,9 @@ namespace MyInput
         private UpdateMode _updateMode;
         public InputMode InputMode => _inputMode;
         public ActionType ActionType => _actionType;
-        
+
         public UpdateMode UpdateMode => _updateMode;
-        public InputType(InputMode inputMode ,ActionType actionType ,UpdateMode updateMode)
+        public InputType(InputMode inputMode, ActionType actionType, UpdateMode updateMode)
         {
             _inputMode = inputMode;
             _actionType = actionType;
@@ -404,7 +367,7 @@ namespace MyInput
         //列挙型のGetHashCodeを返すより、intにキャストしたほうが早い？らしい。
         public override int GetHashCode()
         {
-            return (int)_inputMode ^ (int)_actionType << 10 ^ (int)UpdateMode << 20;   
+            return (int)_inputMode ^ (int)_actionType << 10 ^ (int)UpdateMode << 20;
         }
         public bool Equals(InputType other)
         {
@@ -428,19 +391,19 @@ namespace MyInput
         public UpdateMode UpdateMode => _inputType.UpdateMode;
         public ExecuteType ExecuteType => _executeType;
 
-        public Inputter( InputType inputType , ExecuteType execute) 
+        public Inputter(InputType inputType, ExecuteType execute)
         {
             _inputType = inputType;
             _executeType = execute;
         }
-        public Inputter(InputMode inputMode, ActionType actionType, ExecuteType execute, UpdateMode updateMode)
+        public Inputter(InputMode inputMode, ActionType actionType, UpdateMode updateMode, ExecuteType execute)
         {
-            _inputType = new InputType(inputMode, actionType ,updateMode);
+            _inputType = new InputType(inputMode, actionType, updateMode);
             _executeType = execute;
         }
         public override int GetHashCode()
         {
-            return InputType.GetHashCode() ;
+            return InputType.GetHashCode();
         }
 
         public bool Equals(Inputter other)
@@ -452,5 +415,17 @@ namespace MyInput
             return false;
         }
     }
-    
+    public class InputToken
+    {
+        private Inputter _inputter;
+        private Delegate _action;
+        public Inputter Inputter => _inputter;
+        public Delegate Action => _action;
+        public InputToken(Inputter inputter , Delegate action)
+        {
+            _inputter = inputter;
+            _action = action;
+        }
+
+    }
 }

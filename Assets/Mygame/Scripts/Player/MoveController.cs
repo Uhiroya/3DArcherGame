@@ -1,9 +1,4 @@
 ﻿using UnityEngine;
-using System.Collections;
-using System.Runtime.CompilerServices;
-using UnityEngine.Animations;
-using DG.Tweening;
-//using UnityEngine.InputSystem;
 using MyInput;
 using System.Collections.Generic;
 using System;
@@ -50,48 +45,42 @@ public class MoveController : MonoBehaviour
     }
     JumpStatePattern _jumpState;
     AnimStatePattern _animState;
+
+    InputType _inputJump = new InputType(InputMode.InGame, ActionType.Jump, UpdateMode.Update);
+    InputType _inputMove = new InputType(InputMode.InGame, ActionType.Move, UpdateMode.FixedUpdate);
+    InputType _inputMoveAnim = new InputType(InputMode.InGame, ActionType.Move, UpdateMode.Update);
+    InputType _inputArrow = new InputType(InputMode.InGame, ActionType.Fire1, UpdateMode.Update);
+
+    InputToken _inputArrowEnterToken;
+    InputToken _inputArrowExitToken;
+    InputToken _inputJumpEnterToken;
+    InputToken _inputJumpExitToken;
+    InputToken _inputMoveToken;
+    InputToken _inputMoveAnimToken;
     void Start()
     {
         _ac = GetComponent<AnimationController>();
         _anim = GetComponent<Animator>();
         _rb = GetComponent<Rigidbody>();
     }
-    List<(Inputter , Action)> InGameInput = new();
-    Inputter _playerInput;
-    Inputter _playerAnimationInput;
-
     private void OnEnable()
     {
-        InGameInput.Add((new Inputter(InputMode.InGame, ActionType.Jump, ExecuteType.Enter, UpdateMode.Update),JumpStart));
-        InGameInput.Add((new Inputter(InputMode.InGame, ActionType.Jump, ExecuteType.Exit, UpdateMode.Update),JumpEnd));
-        InGameInput.Add((new Inputter(InputMode.InGame, ActionType.Fire1, ExecuteType.Enter, UpdateMode.Update),ArrowFireStart));
-        InGameInput.Add((new Inputter(InputMode.InGame, ActionType.Fire1, ExecuteType.Performed, UpdateMode.Update),() => Debug.Log("なう")));
-        InGameInput.Add((new Inputter(InputMode.InGame, ActionType.Fire1, ExecuteType.Exit, UpdateMode.Update),ArrowFireEnd));
-        GA.Input.Regist(InGameInput);
-        _playerInput = new Inputter(InputMode.InGame, ActionType.Move, ExecuteType.Always, UpdateMode.FixedUpdate);
-        _playerAnimationInput = new Inputter(InputMode.InGame, ActionType.Move, ExecuteType.Always, UpdateMode.Update);
-        GA.Input.Regist(_playerInput, MovePlayer);
-        GA.Input.Regist(_playerAnimationInput, AnimationUpdate);
-        
-        //_debugPrinter = new(InputModeType.InGame, InputActionType.Jump, ExecuteType.Enter, UpdateMode.Update, () => Debug.Log("Jumpはじめ"));
-        //_debugPrinter1 = new(InputModeType.InGame, InputActionType.Jump, ExecuteType.Performed, UpdateMode.FixedUpdate, () => Debug.Log("Jump中！！！"));
-        //_debugPrinter2 = new(InputModeType.InGame, InputActionType.Jump, ExecuteType.Exit, UpdateMode.Update, () => Debug.Log("Jumpおわり！！！"));
-        //GA.Input.Regist(_debugPrinter);
-        //GA.Input.Regist(_debugPrinter1);
-        //GA.Input.Regist(_debugPrinter2);
-
+        _inputJumpEnterToken = GA.Input?.Regist(_inputJump, ExecuteType.Enter, JumpStart);
+        _inputJumpExitToken = GA.Input?.Regist(_inputJump, ExecuteType.Exit, JumpEnd);
+        _inputMoveToken = GA.Input?.Regist(_inputMove, ExecuteType.Always, MovePlayer);
+        _inputMoveAnimToken = GA.Input?.Regist(_inputMove, ExecuteType.Always, AnimationUpdate);
+        _inputArrowEnterToken = GA.Input?.Regist(_inputArrow, ExecuteType.Enter, ArrowFireStart);
+        _inputArrowExitToken = GA.Input?.Regist(_inputArrow, ExecuteType.Exit, ArrowFireEnd);
     }
     private void OnDisable()
     {
-        GA.Input.UnRegist(InGameInput);
-        GA.Input.UnRegist(_playerInput, MovePlayer);
-        GA.Input.UnRegist(_playerAnimationInput, AnimationUpdate);
-        //GA.Input.UnRegist(_debugPrinter);
-        //GA.Input.UnRegist(_debugPrinter1);
-        //GA.Input.UnRegist(_debugPrinter2);
+        GA.Input?.UnRegist(_inputJumpEnterToken);
+        GA.Input?.UnRegist(_inputJumpExitToken);
+        GA.Input?.UnRegist(_inputMoveToken);
+        GA.Input?.UnRegist(_inputMoveAnimToken);
+        GA.Input?.UnRegist(_inputArrowEnterToken);
+        GA.Input?.UnRegist(_inputArrowExitToken);
     }
-
-    
     void AnimationUpdate(Vector2 dir)
     {
         _anim.SetFloat("velocity_y", _rb.velocity.y);
@@ -133,6 +122,8 @@ public class MoveController : MonoBehaviour
     }
     void ArrowFireStart()
     {
+        if (GA.Input.GetKeyCondition( ActionType.Jump, UpdateMode.Update) == ExecuteType.Waiting)
+            print($"Jumpキーは押されてないですよ-{ GA.Input.GetKeyCondition(ActionType.Jump, UpdateMode.Update)}");
         print("ArrowStart!!!");
         _animState = AnimStatePattern.ArrowFire;
         _ac.ArrowChargeStart();
@@ -190,7 +181,7 @@ public class MoveController : MonoBehaviour
 
     }
 
-    private Vector2 UseInputGravity(Vector2 controlInputValue)
+    private Vector2 MoveGravity(Vector2 controlInputValue)
     {
         _usegravityInputValue.x = Mathf.MoveTowards(
             _usegravityInputValue.x, controlInputValue.x, Time.fixedDeltaTime * inputGravity
@@ -202,8 +193,7 @@ public class MoveController : MonoBehaviour
     }
     void MovePlayer(Vector2 inputVec2) 
     {
-        var moveVec2 = UseInputGravity(inputVec2);
-        //print(moveVec2);
+        var moveVec2 = MoveGravity(inputVec2);
         _inputHorizonal = moveVec2.x;
         _inputVertical = moveVec2.y;
         float moveRate = ( _inputVertical >= 0 ) ?_forwardSpeed : _backwardSpeed;
@@ -222,11 +212,9 @@ public class MoveController : MonoBehaviour
             var CForward = Camera.main.transform.forward;
             var CRight = Camera.main.transform.right;
             transform.forward = new Vector3(CForward.x, 0f, CForward.z ).normalized;
-            //print(_inputVertical);
             var moveX = new Vector3(CForward.x , 0f, CForward.z).normalized * _inputVertical;
             var moveZ = new Vector3(CRight.x, 0f, CRight.z).normalized * _inputHorizonal;
             var dir = ((moveX + moveZ).magnitude < 1f ? (moveX + moveZ) : (moveX + moveZ).normalized) * moveRate * _animMotionDrag;
-            //print((moveX + moveZ).magnitude);
             _nowVelocity = new Vector3(dir.x ,_rb.velocity.y , dir.z);
         }
         _rb.velocity = _nowVelocity;

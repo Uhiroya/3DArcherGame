@@ -17,23 +17,29 @@ public class CameraManager : MonoBehaviour
     [SerializeField] GameObject _optionImage ;
     public static MyTPSCamera.CameraMode _nowCameraMode ;
     private bool _IsOption = false;
-    List<(Inputter , Action)> getInputCallBack = new();
-    List<(Inputter, Action)> menuInputCallBack = new();
-
+    InputType _zoomInput;
+    InputType _inGameMenuInput;
+    InputType _menuInput;
+    InputToken _zoomEnterInputToken;
+    InputToken _zoomExitInputToken;
+    InputToken _inGameMenuInputToken;
+    InputToken _menuInputToken;
     private void Awake()
     {
-        getInputCallBack.Add((new Inputter(InputMode.InGame, ActionType.Zoom, ExecuteType.Enter, UpdateMode.Update), ZoomStart));
-        getInputCallBack.Add((new Inputter(InputMode.InGame, ActionType.Zoom, ExecuteType.Exit, UpdateMode.Update), ZoomEnd));
-        getInputCallBack.Add((new Inputter(InputMode.InGame, ActionType.Cancel, ExecuteType.Enter, UpdateMode.Update), GetCancel));
-        menuInputCallBack.Add((new Inputter(InputMode.Menu, ActionType.Cancel, ExecuteType.Enter, UpdateMode.Update), GetCancel));
+        _zoomInput = new InputType (InputMode.InGame , ActionType.Zoom ,UpdateMode.Update);
+        _inGameMenuInput = new InputType (InputMode.InGame , ActionType.Cancel ,UpdateMode.Update);
+        _menuInput = new InputType (InputMode.Menu , ActionType.Cancel ,UpdateMode.Update);
     }
     void OnEnable()
     {
-        GA.Input.Regist(getInputCallBack);
+        _zoomEnterInputToken = GA.Input?.Regist(_zoomInput , ExecuteType.Enter , ZoomStart);
+        _zoomExitInputToken = GA.Input?.Regist(_zoomInput , ExecuteType.Exit , ZoomEnd);
     }
     private void OnDisable()
     {
-        GA.Input.UnRegist(getInputCallBack);
+        GA.Input.UnRegist(_zoomEnterInputToken);
+        GA.Input.UnRegist(_zoomExitInputToken);
+
     }
     void Start()
     {
@@ -44,8 +50,8 @@ public class CameraManager : MonoBehaviour
     public void OpenSetting()
     {
         _IsOption = true;
-        GA.Input.Regist(menuInputCallBack);
-        GA.Input.ModeChange(InputMode.Menu);
+        //_inGameMenuInputToken = GA.Input.Regist(menuInputCallBack);
+        //GA.Input.ModeChange(InputMode.Menu);
         _optionImage.SetActive(true);
         Cursor.visible = true;
         Cursor.lockState = CursorLockMode.None;
@@ -53,8 +59,8 @@ public class CameraManager : MonoBehaviour
     public void CloseSetting()
     {
         _IsOption = false;
-        GA.Input.UnRegist(menuInputCallBack);
-        GA.Input.ModeChange(InputMode.InGame);
+        //GA.Input.UnRegist(menuInputCallBack);
+        //GA.Input.ModeChange(InputMode.InGame);
         _optionImage.SetActive(false);
         Cursor.visible = false;
         Cursor.lockState = CursorLockMode.Locked;
