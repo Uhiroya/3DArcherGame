@@ -122,8 +122,8 @@ public class MoveController : MonoBehaviour
     }
     void ArrowFireStart()
     {
-        if (GA.Input.GetKeyCondition( ActionType.Jump, UpdateMode.Update) == ExecuteType.Waiting)
-            print($"Jumpキーは押されてないですよ-{ GA.Input.GetKeyCondition(ActionType.Jump, UpdateMode.Update)}");
+        if ((ExecuteType.Enter | ExecuteType.Performed).HasFlag(GA.Input.GetKeyCondition(ActionType.Jump, UpdateMode.Update)) )
+            return;
         print("ArrowStart!!!");
         _animState = AnimStatePattern.ArrowFire;
         _ac.ArrowChargeStart();

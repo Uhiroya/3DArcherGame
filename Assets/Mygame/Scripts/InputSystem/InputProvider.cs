@@ -4,7 +4,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using MyInput;
-
+//GlobalAccessbleClass
 public static partial class GA
 {
     public static InputProvider Input = new();
@@ -24,7 +24,7 @@ public class InputProvider
         InputToken inputToken = new InputToken(inputter , action);
         return inputToken;
     }
-    /// <summary> CS0121エラーが出る可能性があるので、デリゲートをキャストする必要があるかも</summary>
+    /// <summary> CS0121エラーが出る可能性があるので、呼び出し時にデリゲートをキャストする必要がある</summary>
     public InputToken Regist(InputType inputType, ExecuteType execute, Action<float> action)
     {
         Inputter inputter = new Inputter(inputType, execute);
@@ -36,7 +36,7 @@ public class InputProvider
         InputToken inputToken = new InputToken(inputter, action);
         return inputToken;
     }
-    /// <summary> CS0121エラーが出る可能性があるので、デリゲートをキャストする必要があるかも</summary>
+    /// <summary> CS0121エラーが出る可能性があるので、呼び出し時にデリゲートをキャストする必要がある</summary>
     public InputToken Regist(InputType inputType, ExecuteType execute, Action<Vector2> action)
     {
         Inputter inputter = new Inputter(inputType, execute);
@@ -76,8 +76,7 @@ public class InputProvider
         _mode = inputMode;
         ResetDicCondition();
     }
-
-    /// <summary>操作の入力状況を返す</summary>
+    /// <summary>操作の入力状況を返す,※Updateのタイミングを合わせて利用する</summary>
     public ExecuteType GetKeyCondition(ActionType actionType, UpdateMode updateMode)
     {
         InputType inputType = new InputType(_mode, actionType, updateMode);
@@ -87,7 +86,7 @@ public class InputProvider
     void ResetDicCondition()
     {
         _actionConditionContainer.Values.Select(x => x.ExecuteType = ExecuteType.Waiting);
-        //配列化してValueを変える分には良いらしい
+        //配列化してKeyを受け取る場合は例外にならない
         foreach (var item in _inputValueDic.Keys.ToList())
         {
             _inputValueDic[item] = 0f;
@@ -426,6 +425,5 @@ namespace MyInput
             _inputter = inputter;
             _action = action;
         }
-
     }
 }
